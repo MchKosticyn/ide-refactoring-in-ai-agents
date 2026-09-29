@@ -337,20 +337,26 @@ def slide_todo(kicker, title, what, items):
     return s
 
 
-def slide_demo(kicker, title, steps, metrics=None, sub=None, actor="ДЕЙСТВИЯ"):
+def slide_demo(kicker, title, steps, metrics=None, sub=None, actor="ДЕЙСТВИЯ", meta=None):
     """Демо: слева область под видео, справа – метрики и шаги."""
     s = slide_blank(kicker, title)
     paras = [("TODO: видео", {"size": 12, "color": AMBER, "bold": True, "space_after": 8})]
     if sub:
         paras.append((sub, {"size": 12, "color": GREY}))
-    card(s, 0.49, 1.35, 5.9, 3.8, line=AMBER, text=paras)
+    if meta:
+        card(s, 0.49, 1.35, 5.9, 3.2, line=AMBER, text=paras)
+        lines = [ln.replace("\n", " ") for ln in meta.split("\n")]
+        card(s, 0.49, 4.65, 5.9, 0.5, line=LILAC, size=11, gap=0, margin=0.15, anchor=MSO_ANCHOR.MIDDLE,
+             text=[(" · ".join(lines), {"color": todo_color(meta, WHITE)})])
+    else:
+        card(s, 0.49, 1.35, 5.9, 3.8, line=AMBER, text=paras)
     y = 1.35
     if metrics:
         mh = 0.42 + 0.27 * len(metrics)
         card(s, 6.6, y, 2.9, mh, line=PURPLE, size=11, gap=2, margin=0.15,
              text=[("МЕТРИКИ", {"size": 10, "color": LILAC, "bold": True, "space_after": 4})]
                   + [(f"{k}: {v}", {"color": todo_color(v)}) for k, v in metrics])
-        y += mh + 0.12
+        y += mh + 0.1
     card(s, 6.6, y, 2.9, 5.15 - y, line=WHITE, size=11, gap=5, margin=0.15,
          text=[(actor, {"size": 10, "color": LILAC, "bold": True, "space_after": 6})]
               + [(f"{i + 1}.  {st}", {}) for i, st in enumerate(steps)])
@@ -547,15 +553,16 @@ s = slide_demo(CH_INTRO, "Подход 0: человек с IDE",
                 "Rename compileAndLint → lint: конфликт «функция уже объявлена»",
                 "Слить тела вручную"],
                metrics=[("Время", "TODO"), ("Стоимость", "TODO")],
-               sub="IDE: IntelliJ IDEA")
+               sub=None, meta="IDE: IntelliJ IDEA")
 
 # ---- Человек в IDE: разбор ----
 s = slide_blank(CH_INTRO, "Подход 0: человек с IDE")
 result_table(s, [
-    (None, "TODO по записи"),
-    (None, "TODO по записи"),
-    (None, "TODO по записи"),
-], metrics=[("Время", "TODO"), ("Стоимость", "TODO"), ("Операций", "3")])
+    (True, "Все 78 вызовов старого lint, включая два без точки"),
+    (True, "FormattingRule.lint и lint(ktFile) не тронуты"),
+    (True, "Конфликт показан до применения; compile = false подставлен явно"),
+], metrics=[("Время", "≈ 30 мин"), ("Стоимость", "≈ $30")])
+textbox(s, 0.49, 5.1, 9.0, 0.3, "Два коммита автора PR за 20 минут, 3 января 2025; ставка $60/ч", size=10, color=GREY, align=PP_ALIGN.CENTER)
 notes(s, "Rename в занятое имя – IDE останавливает и показывает конфликт. Это то, что будем искать у агентов.")
 
 # ---- Термины ----
@@ -613,8 +620,8 @@ s = slide_demo(CH_APPR, "Подход 1: текстовый",
                 "Точечные правки",
                 "Отчёт"],
                metrics=[("Время", "13,7 мин"), ("Стоимость", "$4.41"), ("Ходы", "53"),
-                        ("Токены", "64k out · 3,7M cache"), ("Стартовый контекст", "TODO")],
-               sub="Агент: Claude Code · Модель: Claude Opus (TODO версия)")
+                        ("Токены", "3,9M"), ("Стартовый контекст", "TODO")],
+               sub=None, meta="Агент: Claude Code\nМодель: Claude Opus (TODO версия)")
 
 # ---- Разбор демо 1 ----
 s = slide_blank(CH_APPR, "Подход 1: текстовый")
@@ -622,7 +629,7 @@ result_table(s, [
     (False, "2 из 78 вызовов пропущены: lint(\"fun f() { $code }\") внутри extension-функции – вызов без точки; агент искал «.lint(»"),
     (False, "Комментарий «not compileAndLint for performance reasons» стал «not lint for performance reasons»"),
     (False, "Два хелпера начали компилировать сотни сниппетов. Сборка зелёная"),
-], metrics=[("Время", "13,7 мин"), ("Стоимость", "$4.41"), ("Ходы", "53"), ("Токены", "64k · 3,7M"), ("Контекст", "TODO")])
+], metrics=[("Время", "13,7 мин"), ("Стоимость", "$4.41"), ("Ходы", "53"), ("Токены", "3,9M"), ("Контекст", "TODO")])
 notes(s, "Агент правильно выбрал порядок: сначала старые lint, потом rename; двойник в другом модуле обошёл. Промах – там, где имя не выглядит как вызов метода. "
          "Инструменты агента – поиск по тексту и правка текста.")
 
@@ -652,7 +659,7 @@ card(s, 5.1, 3.6, 4.4, 1.5, line=RED, size=12.5, anchor=MSO_ANCHOR.MIDDLE, text=
 notes(s, "Вывод: промах без сигнала, сборка зелёная, 53 хода и $4 – нужен инструмент, который видит символы, а не строки.")
 
 # ---- Почему агенты правят текстом ----
-s = slide_blank(CH_APPR, "Почему агенты правят текстом")
+s = slide_blank(CH_APPR, "Bias агентов")
 quotes = [
     ("Codex CLI – системный промпт",
      "«prefer using rg … Do not use apply_patch … when scripting is more efficient (such as search and replacing a string across a codebase)»"),
@@ -662,16 +669,18 @@ quotes = [
      "«leaves Glob and Grep out of the default tool set, and Claude searches with find and grep through the Bash tool instead»"),
     ("OpenCode – инструмент Edit",
      "«Use replaceAll … if you want to rename a variable»"),
+    ("Serena (LSP-инструменты для агентов) – README",
+     "«The descriptions of CC's system tools take almost 16k tokens, cannot be adjusted by the user, and introduce a very strong bias towards internal tools, making it almost impossible to convince Opus 4.7 to use Serena»"),
 ]
 y = 1.3
 for t, q in quotes:
-    card(s, 0.49, y, 9.0, 0.8, line=WHITE, size=11, margin=0.15, anchor=MSO_ANCHOR.MIDDLE,
-         text=[(t, {"size": 10, "color": LILAC, "bold": True, "space_after": 1}), (q, {"italic": True})])
-    y += 0.88
+    card(s, 0.49, y, 9.0, 0.7, line=WHITE, size=10.5, margin=0.15, anchor=MSO_ANCHOR.MIDDLE,
+         text=[(t, {"size": 9.5, "color": LILAC, "bold": True, "space_after": 0}), (q, {"italic": True})])
+    y += 0.77
 notes(s, "Это инструкция агента, а не выбор модели: та же модель в другом агенте инструменты вызывает. Единственный инструмент правки у терминальных агентов – замена строки или патч.")
 
 # ---- Бенчмарк по моделям ----
-s = slide_blank(CH_APPR, "Модели и инструменты")
+s = slide_blank(CH_APPR, "Bias моделей")
 card(s, 0.49, 1.4, 9.0, 3.7, line=AMBER, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER,
      text=[("TODO: бенчмарк по моделям", {"size": 16, "color": AMBER, "bold": True})])
 
@@ -707,7 +716,7 @@ s = slide_demo(CH_APPR, "Подход 2: LSP",
                 "Список мест от сервера",
                 "Правки текстом по списку",
                 "Rename по протоколу – если использует"],
-               metrics=M_TODO, sub="Агент: Veai, LSP включён, рефакторинг выключен · Модель: TODO")
+               metrics=M_TODO, meta="Агент: Veai (LSP вкл, рефакторинг выкл)\nМодель: TODO")
 notes(s, "Перед видео – одна фраза: LSP – сервер, который резолвит символы языка; агент спрашивает его, где символ используется, и просит переименовать.")
 
 # ---- LSP: разбор ----
@@ -746,10 +755,10 @@ notes(s, "Уровень протокола. Что сервер делает в
 s = slide_blank(CH_APPR, "Подход 3: движок рефакторинга IDE (IntelliJ)")
 card(s, 0.49, 1.25, 9.0, 0.55, line=PURPLE, text="Модель решает «что», детерминированный инструмент – «как»",
      size=14, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.1)
-textbox(s, 0.49, 1.88, 9.0, 0.5,
+textbox(s, 0.49, 2.0, 9.0, 0.5,
         "Код представлен не текстом, а графом символов: символ – узел, ссылка – ребро к объявлению. «Все использования» – обход ссылок",
         size=12, color=GREY)
-card(s, 0.49, 2.4, 4.4, 2.35, line=RED, size=11, font=MONO, gap=1, text=[
+card(s, 0.49, 2.77, 4.4, 1.63, line=RED, size=11, font=MONO, gap=1, text=[
     ("КАК ВИДИТ GREP", {"size": 10.5, "color": RED, "bold": True, "font": FONT, "space_after": 6}),
     ("grep '\\.lint('  → 180 строк:", {"color": LILAC}),
     "  rule.lint(code)      Rule.lint",
@@ -757,7 +766,7 @@ card(s, 0.49, 2.4, 4.4, 2.35, line=RED, size=11, font=MONO, gap=1, text=[
     "  rule.lint(ktFile)    перегрузка",
     ("  lint(\"fun f() …\")   – не видно", {"color": RED}),
 ])
-card(s, 5.1, 2.4, 4.4, 2.35, line=GREEN, size=11, font=MONO, gap=1, text=[
+card(s, 5.1, 2.77, 4.4, 1.63, line=GREEN, size=11, font=MONO, gap=1, text=[
     ("КАК ВИДИТ IDE", {"size": 10.5, "color": GREEN, "bold": True, "font": FONT, "space_after": 6}),
     ("Rule.lint(content)   99 ссылок", {"color": GREEN}),
     ("  в т. ч. 2 без точки", {"color": GREEN}),
@@ -765,7 +774,7 @@ card(s, 5.1, 2.4, 4.4, 2.35, line=GREEN, size=11, font=MONO, gap=1, text=[
     ("FormattingRule.lint  другой символ", {"color": GREY}),
     ("Rule.compileAndLint  1558 ссылок", {"color": GREEN}),
 ])
-textbox(s, 0.49, 4.82, 9.0, 0.4,
+textbox(s, 0.49, 4.66, 9.0, 0.4,
         "PSI (Program Structure Interface) – модель кода: дерево + ссылки между узлами. IDE держит её в памяти и синхронизирует с редактором",
         size=11.5, color=LILAC, align=PP_ALIGN.CENTER)
 notes(s, "Агент решает, что переименовать и как поступить с конфликтом; движок ищет ссылки, проверяет конфликт, применяет. Рассматриваем только IntelliJ.")
@@ -776,7 +785,7 @@ s = slide_demo(CH_APPR, "Подход 3: движок рефакторинга I
                 "Rename: конфликт «уже объявлена»",
                 "Решение по конфликту",
                 "Применение"],
-               metrics=M_TODO, sub="Агент: Veai, рефакторинг включён, LSP выключен · Модель: TODO")
+               metrics=M_TODO, meta="Агент: Veai (рефакторинг вкл, LSP выкл)\nМодель: TODO")
 
 # ---- Разбор демо 3 ----
 s = slide_blank(CH_APPR, "Подход 3: движок рефакторинга IDE")
