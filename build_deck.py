@@ -486,8 +486,7 @@ card(s, 0.49, 1.4, 9.0, 2.2, line=PURPLE, size=14, gap=8, anchor=MSO_ANCHOR.MIDD
     ("•", "С 2023 года – разработка ИИ-агентов"),
 ])
 card(s, 0.49, 3.85, 9.0, 0.9, line=WHITE, size=13, anchor=MSO_ANCHOR.MIDDLE, text=[
-    ("Эксперт доклада: Максим TODO", {"color": AMBER}),
-    ("Вместе делали инструменты рефакторинга в Veai и демо для этого доклада", {"size": 12, "color": GREY}),
+    ("Эксперт доклада: TODO", {"color": AMBER}),
 ])
 
 # ---- план ----
@@ -517,7 +516,6 @@ card(s, 0.49, 1.4, 9.0, 2.15, line=WHITE, size=14, gap=10, anchor=MSO_ANCHOR.MID
 ])
 card(s, 0.49, 3.75, 9.0, 0.85, line=RED, size=12.5, anchor=MSO_ANCHOR.MIDDLE, text=
      "Сотни мест. Зелёные тесты не доказывают, что поведение то же: меняется сам тестовый код")
-bottom_banner(s, "Дальше: один кейс – человек и три агента, одни метрики", y=4.75, size=13)
 
 # ---- Кейс ----
 s = slide_blank(CH_INTRO, "Кейс: detekt")
@@ -533,7 +531,7 @@ card(s, 0.49, 3.15, 5.4, 1.95, line=PURPLE, size=12, gap=5, text=[
     ("Оставить одну функцию: lint(code, compile = true)", {"bold": True}),
     "compileAndLint(code) → lint(code)",
     "старый lint(code) → lint(code, compile = false), чтобы тесты работали как раньше",
-    ("Реальный PR, февраль 2025. Проект открытый", {"size": 11, "color": GREY}),
+    ("Реальный PR, февраль 2025", {"size": 11, "color": GREY}),
 ])
 card(s, 6.05, 3.15, 3.45, 1.95, line=WHITE, size=11.5, gap=3, margin=0.15, text=[
     ("МАСШТАБ", {"size": 10.5, "color": LILAC, "bold": True, "space_after": 6}),
@@ -549,7 +547,7 @@ s = slide_demo(CH_INTRO, "Человек в IDE",
                 "Rename compileAndLint → lint: конфликт «функция уже объявлена»",
                 "Слить тела вручную"],
                metrics=[("Время", "TODO"), ("Стоимость", "TODO")],
-               sub="TODO: видео IntelliJ IDEA")
+               sub="IDE: IntelliJ IDEA")
 
 # ---- Человек в IDE: разбор ----
 s = slide_blank(CH_INTRO, "Человек в IDE")
@@ -596,7 +594,7 @@ s = slide_demo(CH_APPR, "Подход 1: текстовый",
                 "Отчёт"],
                metrics=[("Время", "13,7 мин"), ("Стоимость", "$4.41"), ("Ходы", "53"),
                         ("Токены", "64k out · 3,7M cache"), ("Стартовый контекст", "TODO")],
-               sub="TODO: видео Claude Code")
+               sub="Агент: Claude Code · Модель: Claude Opus (TODO версия)")
 
 # ---- Разбор демо 1 ----
 s = slide_blank(CH_APPR, "Подход 1: текстовый")
@@ -670,7 +668,6 @@ for t, q in quotes:
     card(s, 0.49, y, 9.0, 0.8, line=WHITE, size=11, margin=0.15, anchor=MSO_ANCHOR.MIDDLE,
          text=[(t, {"size": 10, "color": LILAC, "bold": True, "space_after": 1}), (q, {"italic": True})])
     y += 0.88
-textbox(s, 0.49, 4.85, 9.0, 0.35, "Rename через LSP или IDE: Copilot CLI, JetBrains Junie, Serena", size=11.5, color=GREY, align=PP_ALIGN.CENTER)
 notes(s, "Это инструкция агента, а не выбор модели: та же модель в другом агенте инструменты вызывает. Единственный инструмент правки у терминальных агентов – замена строки или патч.")
 
 # ---- Бенчмарк по моделям ----
@@ -679,20 +676,10 @@ card(s, 0.49, 1.4, 9.0, 3.7, line=AMBER, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIG
      text=[("TODO: бенчмарк по моделям", {"size": 16, "color": AMBER, "bold": True})])
 
 # ---- Veai ----
-s = slide_blank(CH_APPR, "Veai")
+s = slide_blank(CH_APPR, "Veai агент")
 card(s, 0.49, 1.6, 9.0, 2.4, line=PURPLE, size=14, gap=10, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("•", "ИИ-агент для разработчиков, работает внутри IDE JetBrains"),
     ("•", "Инструменты – те же, что у IDE: поиск по символам, рефакторинги, диагностика"),
-    ("•", "Дальше – тот же кейс, тот же промпт, та же модель; меняем только набор инструментов"),
-])
-
-# ---- Veai: панель инструментов ----
-s = slide_blank(CH_APPR, "Veai: набор инструментов")
-card(s, 0.49, 1.35, 5.9, 3.8, line=AMBER, text=[("TODO: скриншот панели инструментов", {"size": 12, "color": AMBER, "bold": True})])
-card(s, 6.6, 1.35, 2.9, 3.8, line=WHITE, size=12, gap=10, margin=0.15, text=[
-    ("ДВА ЗАПУСКА", {"size": 10, "color": LILAC, "bold": True, "space_after": 8}),
-    ("Подход 2", {"bold": True}), ("текст + LSP; рефакторинг выключен", {"color": GREY, "space_after": 12}),
-    ("Подход 3", {"bold": True}), ("текст + рефакторинг; LSP выключен", {"color": GREY}),
 ])
 
 # ---- Демо 2: LSP ----
@@ -701,7 +688,7 @@ s = slide_demo(CH_APPR, "Подход 2: LSP",
                 "Список мест от сервера",
                 "Правки текстом по списку",
                 "Rename по протоколу – если использует"],
-               metrics=M_TODO, sub="TODO: видео Veai, LSP включён")
+               metrics=M_TODO, sub="Агент: Veai, LSP включён, рефакторинг выключен · Модель: TODO")
 notes(s, "Перед видео – одна фраза: LSP – сервер, который резолвит символы языка; агент спрашивает его, где символ используется, и просит переименовать.")
 
 # ---- LSP: что это ----
@@ -761,7 +748,7 @@ s = slide_demo(CH_APPR, "Подход 3: движок рефакторинга I
                 "Rename: конфликт «уже объявлена»",
                 "Решение по конфликту",
                 "Применение"],
-               metrics=M_TODO, sub="TODO: видео Veai, рефакторинг включён")
+               metrics=M_TODO, sub="Агент: Veai, рефакторинг включён, LSP выключен · Модель: TODO")
 
 # ---- Разбор демо 3 ----
 s = slide_blank(CH_APPR, "Подход 3: движок рефакторинга IDE")
@@ -955,8 +942,8 @@ card(s, 0.49, 1.7, 4.4, 2.2, line=GREEN, size=12.5, gap=10, text=[
     "Отдельно от изменения поведения. Ревью читаемо, откат возможен",
 ])
 card(s, 5.1, 1.7, 4.4, 2.2, line=GREEN, size=12.5, gap=10, text=[
-    ("Автоматическая проверка – обязательна", {"size": 15, "bold": True}),
-    "Тесты, компиляция, линтер. В кейсе сборка была зелёной при изменённом поведении – хелперы тестами не покрыты",
+    ("Смотрите на цену, а не только на зелёные тесты", {"size": 15, "bold": True}),
+    "Ходы, время, токены. Агент с любыми инструментами дойдёт до зелёного – вопрос, за сколько и что останется незамеченным",
 ])
 
 # ---- Summary ----
