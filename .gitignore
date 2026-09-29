@@ -4,3 +4,6 @@ deck-overview.png
 ~$*
 __pycache__/
 .DS_Store
+
+# состояние сессии
+STATE.md
