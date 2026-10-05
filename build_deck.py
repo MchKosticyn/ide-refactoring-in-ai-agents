@@ -471,6 +471,63 @@ def two_columns(s, left_title, left_items, right_title, right_items,
     col(5.1, right_color, right_kicker, right_title, right_items)
 
 
+
+
+# ---------- анимация: появление по клику ----------
+from lxml import etree as _et
+_NS = {"p": "http://schemas.openxmlformats.org/presentationml/2006/main",
+       "a": "http://schemas.openxmlformats.org/drawingml/2006/main"}
+
+def animate(slide, shapes, paragraphs=False):
+    """Фигуры появляются по клику, в порядке списка. paragraphs=True – для одной фигуры по абзацам."""
+    if not shapes:
+        return
+    steps = []
+    if paragraphs:
+        sh = shapes[0]
+        n = len([p for p in sh.text_frame.paragraphs if p.text.strip()])
+        steps = [(sh.shape_id, i) for i in range(n)]
+    else:
+        steps = [(sh.shape_id, None) for sh in shapes]
+    tid = [1]
+    def nid():
+        tid[0] += 1
+        return str(tid[0])
+    def tgt(spid, para):
+        if para is None:
+            return f'<p:spTgt spid="{spid}"/>'
+        return f'<p:spTgt spid="{spid}"><p:txEl><p:pRg st="{para}" end="{para}"/></p:txEl></p:spTgt>'
+    seqs = []
+    for spid, para in steps:
+        t = tgt(spid, para)
+        seqs.append(f'''<p:par><p:cTn id="{nid()}" fill="hold"><p:stCondLst><p:cond delay="indefinite"/></p:stCondLst><p:childTnLst>
+<p:par><p:cTn id="{nid()}" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>
+<p:par><p:cTn id="{nid()}" presetID="1" presetClass="entr" presetSubtype="0" fill="hold" nodeType="clickEffect"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>
+<p:set><p:cBhvr><p:cTn id="{nid()}" dur="1" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst></p:cTn><p:tgtEl>{t}</p:tgtEl><p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr><p:to><p:strVal val="visible"/></p:to></p:set>
+</p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par>''')
+    xml = f'''<p:timing xmlns:p="{_NS["p"]}" xmlns:a="{_NS["a"]}"><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst>
+<p:seq concurrent="1" nextAc="seek"><p:cTn id="{nid()}" dur="indefinite" nodeType="mainSeq"><p:childTnLst>{"".join(seqs)}</p:childTnLst></p:cTn>
+<p:prevCondLst><p:cond evt="onPrev" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:prevCondLst>
+<p:nextCondLst><p:cond evt="onNext" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:nextCondLst></p:seq>
+</p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>'''
+    el = _et.fromstring(xml)
+    old = slide._element.find(_qn2("p:timing"))
+    if old is not None:
+        slide._element.remove(old)
+    slide._element.append(el)
+
+
+def _qn2(tag):
+    pfx, name = tag.split(":")
+    return "{%s}%s" % (_NS[pfx], name)
+
+
+def animate_new(slide, start_count, paragraphs=False):
+    """Анимировать все фигуры, добавленные после start_count (snapshot = len(slide.shapes))."""
+    shapes = list(slide.shapes)[start_count:]
+    animate(slide, shapes, paragraphs=paragraphs)
+
+
 # =====================================================================
 # СЛАЙДЫ  (по «План подробный.md»)
 # =====================================================================
@@ -888,19 +945,20 @@ notes(s, "Контраст с текстом: там N мест – N незав
 
 # ---- Таблица ----
 s = slide_blank("Сравнение", "Результат и цена")
-cols = ["", "Человек в IDE", "Текст", "LSP", "Движок IDE"]
+cols = ["", "Человек с IDE", "Текст", "LSP", "Движок IDE"]
 rows = [
-    ("Найдены все места", ["TODO", "✗ 2 из 78", "✓", "TODO"]),
-    ("Правки только по делу", ["TODO", "✗ комментарий", "TODO", "TODO"]),
-    ("Поведение сохранено", ["TODO", "✗ сборка зелёная", "TODO", "TODO"]),
-    ("Время", ["TODO", "13,7 мин", "TODO", "TODO"]),
-    ("Стоимость", ["TODO", "$4.41", "TODO", "TODO"]),
-    ("Ходы", ["3 операции", "53", "TODO", "TODO"]),
+    ("Найдены все места", ["✓", "✗ 2 из 78", "✓", "TODO"]),
+    ("Правки только по делу", ["✓", "✗ комментарий", "TODO", "TODO"]),
+    ("Поведение сохранено", ["✓", "✗ сборка зелёная", "TODO", "TODO"]),
+    ("Время", ["≈ 30 мин", "13,7 мин", "TODO", "TODO"]),
+    ("Стоимость", ["≈ $30", "$4.41", "TODO", "TODO"]),
+    ("Ходы", ["–", "53", "TODO", "TODO"]),
+    ("Токены", ["–", "3,9M", "TODO", "TODO"]),
     ("Стартовый контекст", ["–", "TODO", "TODO", "TODO"]),
 ]
 x0, y0 = 0.49, 1.35
 cw = [2.3, 1.7, 1.7, 1.6, 1.7]
-rh = 0.47
+rh = 0.43
 x = x0
 for i, c in enumerate(cols):
     if c:
@@ -975,6 +1033,32 @@ textbox(s, 5.17, 4.39, 4.42, 0.82, [
     ("Попробовать агента: veai.ru", {"bold": True}),
     ("Telegram-канал: @veai_devs", {"bold": True}),
 ], size=13, color=WHITE)
+
+# ---------- анимация: все содержательные фигуры появляются по клику ----------
+_NO_ANIM_TITLES = {"План доклада", "Спасибо", ""}
+for _sl in prs.slides:
+    _shapes = list(_sl.shapes)
+    if len(_shapes) < 4:
+        continue
+    _title = _shapes[2].text_frame.text if _shapes[2].has_text_frame else ""
+    if _title in _NO_ANIM_TITLES or _title.startswith("Спасибо") or _sl.slide_layout.name == "BLANK_2":
+        continue
+    _content = _shapes[3:]
+    # связующие стрелки и линии – не анимируем отдельно: появятся вместе со слайдом
+    _content = [sh for sh in _content if sh.shape_type not in (3,) and not (sh.has_text_frame is False and sh.width < Inches(0.7))]
+    # один большой список (single textbox с ≥3 абзацами и ничего больше) – по абзацам
+    if len(_content) == 1 and _content[0].has_text_frame and len([q for q in _content[0].text_frame.paragraphs if q.text.strip()]) >= 3:
+        animate(_sl, _content, paragraphs=True)
+    else:
+        animate(_sl, _content)
+
+# ---------- язык текста: без lang="ru" PowerPoint проверяет орфографию как английскую ----------
+from pptx.oxml.ns import qn as _qn
+for _sl in prs.slides:
+    for _r in _sl._element.iter(_qn("a:rPr")):
+        _r.set("lang", "ru-RU")
+    for _e in _sl._element.iter(_qn("a:endParaRPr")):
+        _e.set("lang", "ru-RU")
 
 prs.save(OUT)
 print("слайдов:", len(prs.slides), "→", OUT)
