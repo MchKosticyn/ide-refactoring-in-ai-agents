@@ -609,32 +609,33 @@ s = slide_blank(CH_INTRO, "Рефакторинг – преобразовани
 card(s, 0.72, 1.5, 8.56, 0.7, line=PURPLE, text="Рефакторинг – изменение структуры кода без изменения поведения программы",
      size=15, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
 card(s, 0.72, 2.5, 4.1, 2.0, line=WHITE, size=12.5, gap=8, text=[
-    ("Подзадача 1: найти все места", {"size": 15, "bold": True, "space_after": 10}),
+    ("Задача 1: найти все места", {"size": 15, "bold": True, "space_after": 10}),
     "Нужна полнота. 97 % не годится",
     ("78 вызовов × 97 % = 2 пропуска", {"color": LILAC, "bold": True}),
 ])
 card(s, 5.18, 2.5, 4.1, 2.0, line=WHITE, size=12.5, gap=8, text=[
-    ("Подзадача 2: применить", {"size": 15, "bold": True, "space_after": 10}),
+    ("Задача 2: применить", {"size": 15, "bold": True, "space_after": 10}),
     "Нужна корректность: правка не меняет, к какому методу привязан вызов, и не задевает чужое",
 ])
 notes(s, "Каждый проход дальше разбираем одинаково: найдены ли все места, только ли нужные правки, сохранено ли поведение – и цена: время, стоимость, ходы, токены, стартовый контекст.")
 
 # ---- Зачем это QA ----
 s = slide_blank(CH_INTRO, "Зачем это QA")
-card(s, 0.49, 1.4, 9.0, 2.15, line=WHITE, size=14, gap=10, anchor=MSO_ANCHOR.MIDDLE, text=[
+card(s, 0.49, 1.4, 9.0, 2.31, line=WHITE, size=14, gap=10, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("•", "Миграция фреймворка: Selenium → Playwright, JUnit 4 → 5"),
     ("•", "Наведение структуры: PageObject, композиция фикстур"),
     ("•", "Смена тестового API проекта: хелперы, базовые классы"),
+    ("•", "…"),
 ])
-card(s, 0.49, 3.75, 9.0, 0.85, line=RED, size=12.5, anchor=MSO_ANCHOR.MIDDLE, text=
+card(s, 0.49, 3.86, 9.0, 0.85, line=RED, size=12.5, anchor=MSO_ANCHOR.MIDDLE, text=
      "Сотни мест. Зелёные тесты не доказывают, что поведение то же: меняется сам тестовый код")
 
 # ---- Кейс ----
 s = slide_blank(CH_INTRO, "Кейс: detekt")
-textbox(s, 0.49, 1.2, 9.0, 0.45,
-        "detekt – статический анализатор Kotlin. У него есть тестовая библиотека, которой авторы правил пишут тесты",
+textbox(s, 0.49, 1.16, 9.0, 0.48,
+        "detekt – статический анализатор Kotlin. У него есть тестовая библиотека, с помощью которой авторы правил пишут тесты",
         size=12.5, color=GREY)
-card(s, 0.49, 1.7, 9.0, 1.3, line=WHITE, size=11.5, font=MONO, gap=1, margin=0.15, text=[
+card(s, 0.49, 1.73, 9.0, 1.3, line=WHITE, size=11.5, font=MONO, gap=1, margin=0.15, text=[
     ("fun Rule.compileAndLint(code)  // компилирует сниппет (в CI), потом проверяет", {"color": LILAC}),
     ("fun Rule.lint(code)            // только проверяет: сниппет может не компилироваться", {"color": LILAC}),
 ])
@@ -821,10 +822,10 @@ notes(s, "Не промпт, а продуктовое решение: Cursor у
 
 # ---- Bias агентов (c): Serena ----
 s = slide_blank(CH_APPR, "Bias агентов")
-source_line(s, 0.49, 1.15, 9.0, "Документация Serena – MCP-сервера с инструментами LSP для агентов, октябрь 2026")
-picture(s, "img/serena-docs-attention.png", 0.49, 1.45, h=3.75)      # 1640×1082 → 5.68×3.75
-card(s, 6.4, 1.45, 3.1, 3.75, line=WHITE, size=12, gap=10, anchor=MSO_ANCHOR.MIDDLE, text=[
-    "Описания встроенных инструментов Claude Code – почти 16k токенов; пользователь их не меняет",
+textbox(s, 0.49, 1.15, 9.0, 0.25, "Документация Serena – MCP-сервера с инструментами LSP для агентов, пост опубликован в октября 2026", size=11, color=GREY)
+picture(s, "img/serena-docs-attention.png", 0.49, 1.52, h=3.75)      # 1640×1082 → 5.68×3.75
+card(s, 6.4, 1.52, 3.1, 3.75, line=WHITE, size=12, gap=10, anchor=MSO_ANCHOR.MIDDLE, text=[
+    "«Описания встроенных инструментов Claude Code – почти 16k токенов; пользователь их не меняет»",
     "«Почти невозможно убедить Opus 4.7 пользоваться Serena»",
     ("Авторы дают отдельный системный промпт против этого смещения", {"color": GREY}),
 ])
@@ -1003,7 +1004,7 @@ for i, (t, sub) in enumerate(steps):
     if i < 3:
         arrow(s, X4N[i] + 1.8, 2.43)
 card(s, 0.72, 3.1, 3.7, 1.7, line=WHITE, size=11.5, gap=6, text=[
-    ("ДО", {"size": 10.5, "color": GREY, "bold": True}),
+    ("ДО RENAME", {"size": 10.5, "color": GREY, "bold": True}),
     ("rule.compileAndLint(code)", {"font": MONO, "size": 12}),
     ("rule.lint(code)  – другая функция, без компиляции", {"font": MONO, "size": 12, "color": GREEN}),
 ])
