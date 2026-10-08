@@ -457,6 +457,45 @@ X4 = [0.49, 2.78, 5.07, 7.36]       # четыре карточки в ряд
 X4N = [0.72, 3.01, 5.33, 7.61]      # четыре узкие карточки со стрелками
 
 
+COMPARE_COLS = ["Человек с IDE", "Текст", "LSP", "Движок IDE"]
+COMPARE_ROWS = [
+    ("Найдены все места", ["✓", "✗ 2 из 78", "✓", "TODO"]),
+    ("Правки только по делу", ["✓", "✗ комментарий", "TODO", "TODO"]),
+    ("Поведение сохранено", ["✓", "✗ сборка зелёная", "TODO", "TODO"]),
+    ("Время", ["TODO", "13,7 мин", "TODO", "TODO"]),
+    ("Стоимость", ["TODO", "$4.41", "TODO", "TODO"]),
+    ("Ходы", ["–", "53", "TODO", "TODO"]),
+    ("Токены", ["–", "3,9M", "TODO", "TODO"]),
+    ("Стартовый контекст", ["–", "TODO", "TODO", "TODO"]),
+]
+
+
+def compare_table(s, upto=None):
+    """Таблица «Результат и цена». upto – последняя показанная колонка (таблица растёт по ходу доклада)."""
+    n = COMPARE_COLS.index(upto) + 1 if upto else len(COMPARE_COLS)
+    cols = [""] + COMPARE_COLS[:n]
+    x0, y0 = 0.49, 1.35
+    cw = [2.3] + [6.7 / n] * n
+    rh = 0.43
+    x = x0
+    for i, c in enumerate(cols):
+        if c:
+            textbox(s, x, y0, cw[i], 0.4, c, size=12, color=LILAC, bold=True, align=PP_ALIGN.CENTER)
+        x += cw[i]
+    hline(s, x0, y0 + 0.42, sum(cw), color=PURPLE, width=1.2)
+    colmap = {"✓": GREEN, "✗": RED}
+    for r, (name, vals) in enumerate(COMPARE_ROWS):
+        y = y0 + 0.5 + r * rh
+        textbox(s, x0, y, cw[0], rh, name, size=11.5, color=WHITE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
+        x = x0 + cw[0]
+        for i, v in enumerate(vals[:n]):
+            col = colmap.get(v[0], todo_color(v))
+            textbox(s, x, y, cw[i + 1], rh, v, size=11.5, color=col, bold=v[0] in colmap, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+            x += cw[i + 1]
+        if r == 2:
+            hline(s, x0, y + rh, sum(cw), color=GREY, width=0.5)
+
+
 def two_columns(s, left_title, left_items, right_title, right_items,
                 left_color=RED, right_color=GREEN, y=1.35, h=3.75,
                 left_kicker=None, right_kicker=None):
@@ -618,9 +657,11 @@ result_table(s, [
     (True, "Все 78 вызовов старого lint, включая два без точки"),
     (True, "FormattingRule.lint и lint(ktFile) не тронуты"),
     (True, "Конфликт показан до применения; compile = false подставлен явно"),
-], metrics=[("Время", "≈ 30 мин"), ("Стоимость", "≈ $30")])
-textbox(s, 0.49, 5.1, 9.0, 0.3, "Два коммита автора PR за 20 минут, 3 января 2025; ставка $60/ч", size=10, color=GREY, align=PP_ALIGN.CENTER)
-notes(s, "Rename в занятое имя – IDE останавливает и показывает конфликт. Это то, что будем искать у агентов.")
+], metrics=[("Время", "TODO"), ("Стоимость", "TODO")])
+textbox(s, 0.49, 5.1, 9.0, 0.35, "Агент справится быстрее?", size=14, color=LILAC, bold=True, align=PP_ALIGN.CENTER)
+notes(s, "Rename в занятое имя – IDE останавливает и показывает конфликт. Это то, что будем искать у агентов. "
+         "Время и стоимость – по ускоренной записи с таймером. Порядок величины подтверждает история PR: оба коммита автора сделаны за 20 минут 3 января 2025 (11:12 и 11:32); "
+         "при ставке $60/ч это около $30.")
 
 # ---- Термины ----
 s = slide_blank(CH_INTRO, "ИИ-агент")
@@ -690,6 +731,21 @@ result_table(s, [
 notes(s, "Агент правильно выбрал порядок: сначала старые lint, потом rename; двойник в другом модуле обошёл. Промах – там, где имя не выглядит как вызов метода. "
          "Инструменты агента – поиск по тексту и правка текста.")
 
+# ---- Текстовый подход: вызов без точки ----
+s = slide_blank("Подход 1: текстовый", "Вызов без точки")
+textbox(s, 0.49, 1.2, 9.0, 0.4, "BracesOnIfStatementsSpec.kt:2213 – один из двух пропущенных вызовов", size=12, color=GREY)
+card(s, 0.49, 1.65, 9.0, 2.4, line=WHITE, size=15, font=MONO, gap=4, margin=0.3, anchor=MSO_ANCHOR.MIDDLE, text=[
+    ("private fun BracesOnIfStatements.test(code: String, …) {", {"color": GREY}),
+    ("    // Note: not compileAndLint for performance reasons, …", {"color": GREY}),
+    ("    val findings = lint(\"fun f() { $code }\")", {"color": WHITE, "bold": True}),
+    ("    …", {"color": GREY}),
+])
+card(s, 0.49, 4.25, 9.0, 0.85, line=RED, size=13, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER, text=[
+    ("Receiver неявный – точки нет. Агент искал «.lint(» – этого места в выдаче не было", {"bold": True}),
+])
+notes(s, "Второй такой же – BracesOnWhenStatementsSpec.kt. Для компилятора это тот же вызов Rule.lint, для grep – другая строка. "
+         "Комментарий строкой выше – тот самый, который замена compileAndLint → lint превратила в «not lint for performance reasons».")
+
 # ---- Текстовый подход: плюсы и минусы ----
 s = slide_pros_cons("Подход 1: текстовый",
     ["Нулевая цена входа: без индекса и IDE",
@@ -700,53 +756,86 @@ s = slide_pros_cons("Подход 1: текстовый",
 
 # ---- Текстовый подход: где ломается ----
 s = slide_blank("Подход 1: текстовый", "Где ломается")
-card(s, 0.49, 1.5, 9.0, 1.9, line=WHITE, anchor=MSO_ANCHOR.MIDDLE, size=13, font=MONO, gap=6, text=[
+card(s, 0.49, 1.5, 9.0, 1.4, line=WHITE, anchor=MSO_ANCHOR.MIDDLE, size=13, font=MONO, gap=6, text=[
     ("grep -rn '\\.lint('", {"color": LILAC}),
-    ("  → 180 строк: Rule.lint, FormattingRule.lint, lint(ktFile) – вперемешку", {"color": WHITE}),
-    ("  lint(\"fun f() { $code }\")  – не найден (вызов без точки)", {"color": RED}),
+    ("  → 180 строк: Rule.lint, FormattingRule.lint, lint(ktFile) – вперемешку; вызовов без точки нет", {"color": WHITE}),
 ])
-card(s, 0.49, 3.6, 4.4, 1.5, line=RED, size=12.5, anchor=MSO_ANCHOR.MIDDLE, text=[
+card(s, 0.49, 3.1, 4.4, 1.9, line=RED, size=12.5, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("Полнота", {"bold": True, "space_after": 4}),
     "Подстрока ≠ символ: пропуски и ложные попадания",
 ])
-card(s, 5.1, 3.6, 4.4, 1.5, line=RED, size=12.5, anchor=MSO_ANCHOR.MIDDLE, text=[
+card(s, 5.1, 3.1, 4.4, 1.9, line=RED, size=12.5, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("Корректность", {"bold": True, "space_after": 4}),
     "Правка не знает, что меняет. «Прошло» не значит «заменило правильно»",
 ])
 notes(s, "Вывод: промах без сигнала, сборка зелёная, 53 хода и $4 – нужен инструмент, который видит символы, а не строки.")
 
-# ---- Почему агенты правят текстом ----
-s = slide_blank(CH_APPR, "Bias агентов")
-quotes = [
-    ("Codex CLI – системный промпт",
-     "«prefer using rg … Do not use apply_patch … when scripting is more efficient (such as search and replacing a string across a codebase)»"),
-    ("Claude Code – режим bypass / auto",
-     "«make file changes with sed, heredocs, or short scripts, rather than using the dedicated Read, Edit, or Write tools»"),
-    ("Claude Code – документация",
-     "«leaves Glob and Grep out of the default tool set, and Claude searches with find and grep through the Bash tool instead»"),
-    ("OpenCode – инструмент Edit",
-     "«Use replaceAll … if you want to rename a variable»"),
-    ("Serena (LSP-инструменты для агентов) – README",
-     "«The descriptions of CC's system tools take almost 16k tokens, cannot be adjusted by the user, and introduce a very strong bias towards internal tools, making it almost impossible to convince Opus 4.7 to use Serena»"),
-]
-y = 1.3
-for t, q in quotes:
-    card(s, 0.49, y, 9.0, 0.7, line=WHITE, size=10.5, margin=0.15, anchor=MSO_ANCHOR.MIDDLE,
-         text=[(t, {"size": 9.5, "color": LILAC, "bold": True, "space_after": 0}), (q, {"italic": True})])
-    y += 0.77
-notes(s, "Это инструкция агента, а не выбор модели: та же модель в другом агенте инструменты вызывает. Единственный инструмент правки у терминальных агентов – замена строки или патч.")
+# ---- Bias агентов (a): Codex и Claude Code ----
+def picture(s, path, x, y, w=None, h=None):
+    """Картинка по ширине или высоте с сохранением пропорций."""
+    if w is not None:
+        return s.shapes.add_picture(path, Inches(x), Inches(y), width=Inches(w))
+    return s.shapes.add_picture(path, Inches(x), Inches(y), height=Inches(h))
+
+
+def source_caption(s, x, y, w, h, title, lines):
+    card(s, x, y, w, h, line=LILAC, size=10.5, gap=3, margin=0.15, text=[(title, {"size": 11, "bold": True, "color": LILAC, "space_after": 4})]
+         + [(ln, {"color": GREY}) for ln in lines])
+
+
+s = slide_blank(CH_APPR, "Bias агентов: Codex, Claude Code")
+picture(s, "img/codex-prompt.png", 0.49, 1.3, w=6.3)                 # 1640×512 → 6.3×1.97
+source_caption(s, 7.0, 1.3, 2.5, 1.97, "Codex CLI – системный промпт",
+               ["github.com/openai/codex,", "codex-rs/core/gpt_5_codex_prompt.md", "Поиск – rg; массовая замена – скриптом"])
+picture(s, "img/claude-code-bypass-issue.png", 0.49, 3.4, w=6.3)     # 1640×464 → 6.3×1.78
+source_caption(s, 7.0, 3.4, 2.5, 1.9, "Claude Code – режим bypass / auto",
+               ["Блок системного промпта; цитата по issue #88475, август 2026",
+                "Документация: на macOS и Linux Glob и Grep убраны – поиск через Bash"])
+notes(s, "Это инструкция агента, а не выбор модели: та же модель в другом агенте инструменты вызывает. Единственный инструмент правки у терминальных агентов – замена строки или патч. "
+         "OpenCode – то же: описание инструмента Edit предлагает replaceAll, «if you want to rename a variable».")
+
+# ---- Bias агентов (b): Cursor ----
+s = slide_blank(CH_APPR, "Bias агентов: Cursor")
+picture(s, "img/cursor-forum-colin.png", 0.49, 1.3, h=3.5)           # 854×874 → 3.42×3.5
+picture(s, "img/cursor-forum-maximep.png", 4.1, 1.3, w=5.4)          # 1136×554 → 5.4×2.63
+source_caption(s, 4.1, 4.05, 5.4, 0.95, "Форум Cursor, июль 2026 – ответы сотрудников Cursor",
+               ["Семантический индекс отключён в пользу grep: «модели стали очень хороши в grep»",
+                "forum.cursor.com/t/…/165899"])
+notes(s, "Сильнее промптов: продуктовое решение. Cursor убрал индексацию кодовой базы, потому что модели справляются grep'ом. Индустрия движется к тексту осознанно.")
+
+# ---- Bias агентов (c): Serena ----
+s = slide_blank(CH_APPR, "Bias агентов: Serena")
+picture(s, "img/serena-docs-attention.png", 0.49, 1.3, w=5.9)        # 1640×1082 → 5.9×3.89
+source_caption(s, 6.55, 1.3, 2.95, 3.89, "Документация Serena, раздел Claude Code, октябрь 2026",
+               ["Serena – MCP-сервер, который даёт агенту инструменты LSP: поиск по символам, rename",
+                "Описания встроенных инструментов Claude Code – почти 16k токенов; их не изменить",
+                "«Почти невозможно убедить Opus 4.7 пользоваться Serena» – нужен отдельный системный промпт",
+                "oraios.github.io/serena/02-usage/030_clients.html"])
+notes(s, "Переход к LSP: Serena – это и есть LSP для агента, и даже её авторы признают, что модель к ней не идёт сама. Демо LSP дальше – на Claude Code + Serena.")
 
 # ---- Бенчмарк по моделям ----
 s = slide_blank(CH_APPR, "Bias моделей")
-card(s, 0.49, 1.4, 9.0, 3.7, line=AMBER, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER,
+card(s, 0.49, 1.4, 4.4, 3.7, line=AMBER, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER,
      text=[("TODO: бенчмарк по моделям", {"size": 16, "color": AMBER, "bold": True})])
+card(s, 5.1, 1.4, 4.4, 3.7, line=WHITE, size=12, gap=8, text=[
+    ("Пилот AgentConnect, август 2026", {"size": 13, "bold": True, "color": LILAC, "space_after": 8}),
+    ("Модели Claude, LSP доступен как инструмент:", {"color": GREY}),
+    ("•", "выбирали LSP в 0–6 % задач на поиск места в коде"),
+    ("•", "в 3 % задач на переименование"),
+    ("•", "принудительный LSP снизил долю успешных задач со 100 % до 89 %"),
+    ("agentconnect.md/blog/grep-beat-lsp-harness", {"size": 10.5, "color": GREY}),
+])
+notes(s, "Оговорки – только здесь: пилот, 2–3 прогона на ячейку, rename через LSP не тестировали. Тезис статьи – «agent capability = model × harness»: "
+         "модель сама к LSP не идёт, а если заставить без доработки агента – становится хуже.")
 
 # ---- Veai ----
 s = slide_blank(CH_APPR, "Veai агент")
-card(s, 0.49, 1.6, 9.0, 2.4, line=PURPLE, size=14, gap=10, anchor=MSO_ANCHOR.MIDDLE, text=[
+card(s, 0.49, 1.3, 9.0, 1.1, line=PURPLE, size=13, gap=6, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("•", "ИИ-агент для разработчиков, работает внутри IDE JetBrains"),
     ("•", "Инструменты – те же, что у IDE: поиск по символам, рефакторинги, диагностика"),
 ])
+card(s, 0.49, 2.55, 9.0, 2.55, line=AMBER, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER,
+     text=[("TODO: скриншот Veai внутри IDE с открытым кейсом detekt", {"size": 14, "color": AMBER, "bold": True})])
 
 # ---- LSP: что это ----
 s = slide_blank(CH_APPR, "Подход 2: LSP")
@@ -773,7 +862,7 @@ s = slide_demo(CH_APPR, "Подход 2: LSP",
                 "Список мест от сервера",
                 "Правки текстом по списку",
                 "Rename по протоколу – если использует"],
-               metrics=M_TODO, meta="Агент: Veai (LSP вкл, рефакторинг выкл)\nМодель: TODO")
+               metrics=M_TODO, meta="Агент: Claude Code + Serena (инструменты LSP)\nМодель: TODO")
 notes(s, "Перед видео – одна фраза: LSP – сервер, который резолвит символы языка; агент спрашивает его, где символ используется, и просит переименовать.")
 
 # ---- LSP: разбор ----
@@ -783,34 +872,42 @@ result_table(s, [
     (None, "TODO по записи"),
     (None, "TODO по записи"),
 ], metrics=[(k, v) for k, v in M_TODO])
-notes(s, "Rename отказал в нашем прогоне – лучше, чем применить без предупреждения. Но это выбор сервера, а не правило протокола, и продолжить после отказа нечем.")
+notes(s, "Rename отказал в нашем прогоне – лучше, чем применить без предупреждения. Но это выбор сервера, а не правило протокола, и продолжить после отказа нечем. "
+         "Из пилота AgentConnect (август 2026): LSP точнее grep, но полнота у обоих около 0,66 – LSP не гарантия, что найдено всё.")
 
-# ---- LSP: плюсы и минусы ----
-s = slide_pros_cons("Подход 2: LSP",
-    ["Поиск по символу, а не по подстроке",
-     "Сервер есть для любого основного языка; IDE не нужна"],
-    ["Из рефакторингов – только переименование",
-     "Сервер не знает, что уже изменилось; когда индекс актуален – неизвестно",
-     "Один сервер – один язык",
-     "Конфликты – на усмотрение сервера"])
-
-# ---- LSP: ограничения ----
-s = slide_blank("Подход 2: LSP", "Ограничения протокола")
-items = [
-    ("Из рефакторингов – только переименование", "Перенос, смена сигнатуры, удаление – в протоколе нет; передать им параметры нечем"),
-    ("Сервер не знает, что уже изменилось", "Правки агента сервер видит только после уведомления клиента; когда индекс актуален – неизвестно"),
-    ("Один сервер – один язык", "Ссылки из другого языка и из конфигурации не видны"),
-    ("Конфликты – на усмотрение сервера", "Ошибка строкой, применение без предупреждения или пометка на правке. «Продолжить всё равно» нет"),
-]
-for i, (t, b) in enumerate(items):
-    x = [0.49, 5.1][i % 2]; y = [1.45, 3.15][i // 2]
-    card(s, x, y, 4.4, 1.5, line=RED, anchor=MSO_ANCHOR.MIDDLE, text=[(t, {"size": 14, "bold": True, "space_after": 6}), (b, {"size": 11.5, "color": GREY})])
-notes(s, "Уровень протокола. Что сервер делает внутри ограничений – своё у каждого: clangd и gopls отказывают, rust-analyzer помечает правку, Kotlin LSP отказал нам. "
+# ---- LSP: плюсы и минусы (минусы – ограничения протокола) ----
+s = slide_blank("Подход 2: LSP", "Плюсы и минусы")
+card(s, 0.49, 1.35, 4.4, 3.75, line=GREEN, size=11.5, gap=4, text=[
+    ("Плюсы", {"size": 17, "bold": True, "space_after": 12}),
+    ("Поиск по символу", {"size": 14, "bold": True, "space_after": 2}),
+    ("Не по подстроке: вызов без точки и одноимённая функция другого типа различаются", {"space_after": 12}),
+    ("Любой основной язык", {"size": 14, "bold": True, "space_after": 2}),
+    ("Сервер есть для rust, go, python, Kotlin и остальных; IDE не нужна", {"space_after": 12}),
+    ("Один протокол", {"size": 14, "bold": True, "space_after": 2}),
+    "Агент говорит с любым сервером одинаково",
+])
+card(s, 5.1, 1.35, 4.4, 3.75, line=RED, size=10.5, gap=2, margin=0.18, text=[
+    ("Минусы: ограничения протокола", {"size": 15, "bold": True, "space_after": 8}),
+    ("Из рефакторингов – только переименование", {"size": 12, "bold": True, "space_after": 0}),
+    ("Перенос, смена сигнатуры, удаление – в протоколе нет; передать им параметры нечем", {"color": GREY, "space_after": 6}),
+    ("Сервер не знает, что уже изменилось", {"size": 12, "bold": True, "space_after": 0}),
+    ("Правки агента видит после уведомления клиента; когда индекс актуален – неизвестно", {"color": GREY, "space_after": 6}),
+    ("Один сервер – один язык", {"size": 12, "bold": True, "space_after": 0}),
+    ("Ссылки из другого языка и из конфигурации не видны", {"color": GREY, "space_after": 6}),
+    ("Конфликты – на усмотрение сервера", {"size": 12, "bold": True, "space_after": 0}),
+    ("Ошибка строкой, применение без предупреждения или пометка на правке. «Продолжить всё равно» нет", {"color": GREY}),
+])
+notes(s, "Минусы – уровень протокола. Что сервер делает внутри ограничений – своё у каждого: clangd и gopls отказывают, rust-analyzer помечает правку, Kotlin LSP отказал нам. "
          "Вывод: символы видит, оба вызова без точки нашёл; но операция одна, конфликт как повезёт, один язык. Нужен движок.")
+
+# ---- Сравнение: после LSP ----
+s = slide_blank("Сравнение", "Результат и цена – пока")
+compare_table(s, upto="LSP")
+notes(s, "Таблица растёт по ходу доклада: после движка добавится четвёртая колонка.")
 
 # ---- Движок: что это ----
 s = slide_blank(CH_APPR, "Подход 3: движок рефакторинга IDE (IntelliJ)")
-card(s, 0.49, 1.25, 9.0, 0.55, line=PURPLE, text="Модель решает «что», детерминированный инструмент – «как»",
+card(s, 0.49, 1.25, 9.0, 0.55, line=PURPLE, text="Инструменты IDE позволяют разделить: модель решает «что», движок делает «как»",
      size=14, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.1)
 textbox(s, 0.49, 2.0, 9.0, 0.5,
         "Код представлен не текстом, а графом символов: символ – узел, ссылка – ребро к объявлению. «Все использования» – обход ссылок",
@@ -829,7 +926,7 @@ card(s, 5.1, 2.77, 4.4, 1.63, line=GREEN, size=11, font=MONO, gap=1, text=[
     ("  в т. ч. 2 без точки", {"color": GREEN}),
     ("Rule.lint(ktFile)    другой символ", {"color": GREY}),
     ("FormattingRule.lint  другой символ", {"color": GREY}),
-    ("Rule.compileAndLint  1558 ссылок", {"color": GREEN}),
+    ("Rule.compileAndLint  1428 ссылок", {"color": GREEN}),
 ])
 textbox(s, 0.49, 4.66, 9.0, 0.4,
         "PSI (Program Structure Interface) – модель кода: дерево + ссылки между узлами. IDE держит её в памяти и синхронизирует с редактором",
@@ -945,37 +1042,7 @@ notes(s, "Контраст с текстом: там N мест – N незав
 
 # ---- Таблица ----
 s = slide_blank("Сравнение", "Результат и цена")
-cols = ["", "Человек с IDE", "Текст", "LSP", "Движок IDE"]
-rows = [
-    ("Найдены все места", ["✓", "✗ 2 из 78", "✓", "TODO"]),
-    ("Правки только по делу", ["✓", "✗ комментарий", "TODO", "TODO"]),
-    ("Поведение сохранено", ["✓", "✗ сборка зелёная", "TODO", "TODO"]),
-    ("Время", ["≈ 30 мин", "13,7 мин", "TODO", "TODO"]),
-    ("Стоимость", ["≈ $30", "$4.41", "TODO", "TODO"]),
-    ("Ходы", ["–", "53", "TODO", "TODO"]),
-    ("Токены", ["–", "3,9M", "TODO", "TODO"]),
-    ("Стартовый контекст", ["–", "TODO", "TODO", "TODO"]),
-]
-x0, y0 = 0.49, 1.35
-cw = [2.3, 1.7, 1.7, 1.6, 1.7]
-rh = 0.43
-x = x0
-for i, c in enumerate(cols):
-    if c:
-        textbox(s, x, y0, cw[i], 0.4, c, size=12, color=LILAC, bold=True, align=PP_ALIGN.CENTER)
-    x += cw[i]
-hline(s, x0, y0 + 0.42, sum(cw), color=PURPLE, width=1.2)
-colmap = {"✓": GREEN, "✗": RED}
-for r, (name, vals) in enumerate(rows):
-    y = y0 + 0.5 + r * rh
-    textbox(s, x0, y, cw[0], rh, name, size=11.5, color=WHITE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
-    x = x0 + cw[0]
-    for i, v in enumerate(vals):
-        col = colmap.get(v[0], todo_color(v))
-        textbox(s, x, y, cw[i + 1], rh, v, size=11.5, color=col, bold=v[0] in colmap, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-        x += cw[i + 1]
-    if r == 2:
-        hline(s, x0, y + rh, sum(cw), color=GREY, width=0.5)
+compare_table(s)
 notes(s, "Не читать вслух. У текста нет символа; у LSP символ есть, но только rename, один язык и конфликты как повезёт; у движка – модель проекта и проверка до правки. "
          "Ниша текста – некомпилирующийся код и нулевая цена входа. Строка контекста – ответ на «сколько стоят описания инструментов».")
 
