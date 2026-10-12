@@ -416,7 +416,7 @@ def slide_pros_cons(kicker, pros, cons, note=None):
     return s
 
 
-PLAN = ["Введение", "Подходы к рефакторингу в агентах", "MCP для рефакторинга", "Советы пользователям агентов"]
+PLAN = ["Введение", "Подходы к рефакторингу в агентах", "Почему агенты правят текстом", "MCP для рефакторинга", "Советы пользователям агентов"]
 
 
 def slide_plan(done=(), current=None):
@@ -581,6 +581,7 @@ def _qn2(tag):
 
 CH_INTRO = "Введение"
 CH_APPR = "Подходы к рефакторингу в агентах"
+CH_BIAS = "Почему агенты правят текстом"
 MONO = "Menlo"
 M_TODO = [("Время", "TODO"), ("Стоимость", "TODO"), ("Ходы", "TODO"), ("Токены", "TODO"), ("Стартовый контекст", "TODO")]
 
@@ -746,22 +747,6 @@ anim(s, [0, 1], [2, 3], [4, 5], range(6, 11))
 notes(s, "Агент правильно выбрал порядок: сначала старые lint, потом rename; двойник в другом модуле обошёл. Промах – там, где имя не выглядит как вызов метода. "
          "Инструменты агента – поиск по тексту и правка текста.")
 
-# ---- Текстовый подход: вызов без точки ----
-s = slide_blank("Подход 1: текстовый", "Вызов без точки")
-textbox(s, 0.49, 1.2, 9.0, 0.4, "BracesOnIfStatementsSpec.kt:2213 – один из двух пропущенных вызовов", size=12, color=GREY)
-card(s, 0.49, 1.65, 9.0, 2.4, line=WHITE, size=15, font=MONO, gap=4, margin=0.3, anchor=MSO_ANCHOR.MIDDLE, text=[
-    ("private fun BracesOnIfStatements.test(code: String, …) {", {"color": GREY}),
-    ("    // Note: not compileAndLint for performance reasons, …", {"color": GREY}),
-    ("    val findings = lint(\"fun f() { $code }\")", {"color": WHITE, "bold": True}),
-    ("    …", {"color": GREY}),
-])
-card(s, 0.49, 4.25, 9.0, 0.85, line=RED, size=13, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER, text=[
-    ("Receiver неявный – точки нет. Агент искал «.lint(» – этого места в выдаче не было", {"bold": True}),
-])
-anim(s, [0, 1], [2])
-notes(s, "Второй такой же – BracesOnWhenStatementsSpec.kt. Для компилятора это тот же вызов Rule.lint, для grep – другая строка. "
-         "Комментарий строкой выше – тот самый, который замена compileAndLint → lint превратила в «not lint for performance reasons».")
-
 # ---- Текстовый подход: плюсы и минусы ----
 s = slide_pros_cons("Подход 1: текстовый",
     ["Ничего не нужно: ни индекса, ни IDE, ни запущенного проекта",
@@ -774,91 +759,31 @@ s = slide_pros_cons("Подход 1: текстовый",
 
 # ---- Текстовый подход: где ломается ----
 s = slide_blank("Подход 1: текстовый", "Где ломается")
-card(s, 0.49, 1.5, 9.0, 1.4, line=WHITE, anchor=MSO_ANCHOR.MIDDLE, size=13, font=MONO, gap=6, text=[
-    ("grep -rn '\\.lint('", {"color": LILAC}),
-    ("  → 180 строк: Rule.lint, FormattingRule.lint, lint(ktFile) – вперемешку; вызовов без точки нет", {"color": WHITE}),
+textbox(s, 0.49, 1.15, 9.0, 0.3, "Одна строка – две разные функции", size=12, color=GREY)
+card(s, 0.49, 1.45, 9.0, 1.85, line=WHITE, size=12.5, font=MONO, gap=2, margin=0.25, anchor=MSO_ANCHOR.MIDDLE, text=[
+    ("detekt-rules-style/…/UnusedParameterSpec.kt", {"color": GREY, "size": 10.5}),
+    ("    subject.lint(code)   // Rule.lint – та, что меняем", {"color": WHITE, "space_after": 6}),
+    ("detekt-formatting/…/IndentationSpec.kt", {"color": GREY, "size": 10.5}),
+    ("    subject.lint(code)   // FormattingRule.lint – другая функция", {"color": RED}),
 ])
-card(s, 0.49, 3.1, 4.4, 1.9, line=RED, size=12.5, anchor=MSO_ANCHOR.MIDDLE, text=[
+card(s, 0.49, 3.5, 4.4, 1.6, line=RED, size=12.5, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("Полнота", {"bold": True, "space_after": 4}),
     "Поиск по подстроке: пропускает одни места и захватывает чужие",
 ])
-card(s, 5.1, 3.1, 4.4, 1.9, line=RED, size=12.5, anchor=MSO_ANCHOR.MIDDLE, text=[
+card(s, 5.1, 3.5, 4.4, 1.6, line=RED, size=12.5, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("Корректность", {"bold": True, "space_after": 4}),
     "После замены вызов может вести в другую функцию – замена этого не проверяет",
 ])
-anim(s, [0], [1, 2])
-notes(s, "Вывод: промах без сигнала, сборка зелёная, 53 хода и $4 – нужен инструмент, который видит функции и их вызовы, а не строки.")
+anim(s, [0, 1], [2, 3])
+notes(s, "Пример из прогонов 2026-10-10: в 4 из 5 агент тронул IndentationSpec.kt – заменил import compileAndLint на import lint; после этого subject.lint(code) в файле "
+         "вызывает Rule.lint вместо FormattingRule.lint – текст не изменился, функция другая, сборка зелёная. TODO: подтвердить в IDE (Go to Declaration). "
+         "Вызов без точки lint(\"fun f() { $code }\") – вторая ловушка того же рода: в прогоне 29.09 пропущен, в прогонах 10.10 найден. "
+         "Вывод: нужен инструмент, который видит функции и их вызовы, а не строки.")
 
 # ---- Сравнение: после текста ----
 s = slide_blank("Сравнение", "Результат и цена")
 compare_table(s, upto="Текст")
 notes(s, "Пауза после подхода. Таблица растёт по ходу доклада: после каждого подхода – колонка.")
-
-# ---- Bias агентов (a): Codex и Claude Code ----
-def picture(s, path, x, y, w=None, h=None):
-    """Картинка по ширине или высоте с сохранением пропорций, со скруглением как у карточек."""
-    from pptx.oxml.ns import qn as _q
-    if w is not None:
-        pic = s.shapes.add_picture(path, Inches(x), Inches(y), width=Inches(w))
-    else:
-        pic = s.shapes.add_picture(path, Inches(x), Inches(y), height=Inches(h))
-    geom = pic._element.spPr.find(_q("a:prstGeom"))
-    geom.set("prst", "roundRect")
-    av = geom.find(_q("a:avLst"))
-    for gd in list(av):
-        av.remove(gd)
-    adj = corner_adj(Emu(pic.width).inches, Emu(pic.height).inches)
-    av.append(av.makeelement(_q("a:gd"), {"name": "adj", "fmla": f"val {int(adj * 100000)}"}))
-    return pic
-
-
-def source_line(s, x, y, w, text):
-    """Подпись источника над картинкой – одна строка серым."""
-    textbox(s, x, y, w, 0.3, text, size=11, color=GREY)
-
-
-s = slide_blank(CH_APPR, "Bias агентов")
-source_line(s, 0.49, 1.15, 9.0, "Codex CLI – системный промпт")
-picture(s, "img/codex-prompt.png", 0.49, 1.45, w=7.6)                # 1800×464 → 7.6×1.96
-source_line(s, 0.49, 3.55, 9.0, "Claude Code – системный промпт в режиме bypass / auto, август 2026")
-picture(s, "img/claude-code-bypass-issue.png", 0.49, 3.85, w=7.6)    # 1640×329 → 7.6×1.52
-notes(s, "Это инструкция агента, а не выбор модели: та же модель в другом агенте инструменты вызывает. Единственный инструмент правки у терминальных агентов – замена строки или патч. "
-         "Источники: github.com/openai/codex, codex-rs/core/gpt_5_codex_prompt.md (тот же текст в промптах для gpt-5.2); блок bypass/auto – по issue anthropics/claude-code #88475 (версии 2.1.228+). "
-         "Документация Claude Code: на macOS и Linux Glob и Grep убраны из набора по умолчанию – поиск через find и grep в Bash. OpenCode: описание инструмента Edit предлагает replaceAll, «if you want to rename a variable».")
-
-# ---- Bias агентов (b): Cursor ----
-s = slide_blank(CH_APPR, "Bias агентов")
-source_line(s, 0.49, 1.15, 9.0, "Форум Cursor, июль 2026 – ответы сотрудников Cursor")
-picture(s, "img/cursor-forum-colin.png", 0.49, 1.45, w=9.0)          # 2340×534 → 9.0×2.05
-picture(s, "img/cursor-forum-maximep.png", 0.49, 3.65, w=9.0)        # 2340×382 → 9.0×1.47
-notes(s, "Не промпт, а продуктовое решение: Cursor убрал семантический индекс, потому что модели справляются grep'ом. forum.cursor.com/t/…/165899")
-
-# ---- Bias агентов (c): Serena ----
-s = slide_blank(CH_APPR, "Bias агентов")
-textbox(s, 0.49, 1.15, 9.0, 0.25, "Документация Serena – MCP-сервера с инструментами LSP для агентов, пост опубликован в октября 2026", size=11, color=GREY)
-picture(s, "img/serena-docs-attention.png", 0.49, 1.52, h=3.75)      # 1640×1082 → 5.68×3.75
-card(s, 6.4, 1.52, 3.1, 3.75, line=WHITE, size=12, gap=10, anchor=MSO_ANCHOR.MIDDLE, text=[
-    "«Описания встроенных инструментов Claude Code – почти 16k токенов; пользователь их не меняет»",
-    "«Почти невозможно убедить Opus 4.7 пользоваться Serena»",
-    ("Авторы дают отдельный системный промпт против этого смещения", {"color": GREY}),
-])
-notes(s, "Переход к LSP: Serena даёт агенту LSP, и её авторы пишут, что модель к ней сама не идёт. Демо LSP – на Claude Code + Serena. oraios.github.io/serena/02-usage/030_clients.html")
-
-# ---- Бенчмарк по моделям ----
-s = slide_blank(CH_APPR, "Bias моделей")
-card(s, 0.49, 1.4, 4.4, 3.7, line=AMBER, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER,
-     text=[("TODO: бенчмарк по моделям", {"size": 16, "color": AMBER, "bold": True})])
-card(s, 5.1, 1.4, 4.4, 3.7, line=WHITE, size=12, gap=8, text=[
-    ("Пилот AgentConnect, август 2026", {"size": 13, "bold": True, "color": LILAC, "space_after": 8}),
-    ("Модели Claude, LSP доступен как инструмент:", {"color": GREY}),
-    ("•", "выбирали LSP в 0–6 % задач на поиск места в коде"),
-    ("•", "в 3 % задач на переименование"),
-    ("•", "принудительный LSP снизил долю успешных задач со 100 % до 89 %"),
-    ("agentconnect.md/blog/grep-beat-lsp-harness", {"size": 10.5, "color": GREY}),
-])
-anim(s, [0], [1])
-notes(s, "Оговорки – только здесь: пилот, 2–3 прогона на ячейку, rename через LSP не тестировали. Тезис статьи – «agent capability = model × harness»: "
-         "модель сама к LSP не идёт, а если заставить без доработки агента – становится хуже.")
 
 # ---- LSP: что это ----
 s = slide_blank(CH_APPR, "Подход 2: LSP")
@@ -1064,7 +989,75 @@ compare_table(s)
 notes(s, "Не читать вслух. У текста нет символа; у LSP символ есть, но только rename, один язык и конфликты как повезёт; у движка – модель проекта и проверка до правки. "
          "Ниша текста – некомпилирующийся код и нулевая цена входа. Строка контекста – ответ на «сколько стоят описания инструментов».")
 
-slide_plan(done={CH_INTRO, CH_APPR}, current="MCP для рефакторинга")
+slide_plan(done={CH_INTRO, CH_APPR}, current=CH_BIAS)
+
+# ---- Bias агентов (a): Codex и Claude Code ----
+def picture(s, path, x, y, w=None, h=None):
+    """Картинка по ширине или высоте с сохранением пропорций, со скруглением как у карточек."""
+    from pptx.oxml.ns import qn as _q
+    if w is not None:
+        pic = s.shapes.add_picture(path, Inches(x), Inches(y), width=Inches(w))
+    else:
+        pic = s.shapes.add_picture(path, Inches(x), Inches(y), height=Inches(h))
+    geom = pic._element.spPr.find(_q("a:prstGeom"))
+    geom.set("prst", "roundRect")
+    av = geom.find(_q("a:avLst"))
+    for gd in list(av):
+        av.remove(gd)
+    adj = corner_adj(Emu(pic.width).inches, Emu(pic.height).inches)
+    av.append(av.makeelement(_q("a:gd"), {"name": "adj", "fmla": f"val {int(adj * 100000)}"}))
+    return pic
+
+
+def source_line(s, x, y, w, text):
+    """Подпись источника над картинкой – одна строка серым."""
+    textbox(s, x, y, w, 0.3, text, size=11, color=GREY)
+
+
+s = slide_blank(CH_BIAS, "Bias агентов")
+source_line(s, 0.49, 1.15, 9.0, "Codex CLI – системный промпт")
+picture(s, "img/codex-prompt.png", 0.49, 1.45, w=7.6)                # 1800×464 → 7.6×1.96
+source_line(s, 0.49, 3.55, 9.0, "Claude Code – системный промпт в режиме bypass / auto, август 2026")
+picture(s, "img/claude-code-bypass-issue.png", 0.49, 3.85, w=7.6)    # 1640×329 → 7.6×1.52
+notes(s, "Это инструкция агента, а не выбор модели: та же модель в другом агенте инструменты вызывает. Единственный инструмент правки у терминальных агентов – замена строки или патч. "
+         "Источники: github.com/openai/codex, codex-rs/core/gpt_5_codex_prompt.md (тот же текст в промптах для gpt-5.2); блок bypass/auto – по issue anthropics/claude-code #88475 (версии 2.1.228+). "
+         "Документация Claude Code: на macOS и Linux Glob и Grep убраны из набора по умолчанию – поиск через find и grep в Bash. OpenCode: описание инструмента Edit предлагает replaceAll, «if you want to rename a variable».")
+
+# ---- Bias агентов (b): Cursor ----
+s = slide_blank(CH_BIAS, "Bias агентов")
+source_line(s, 0.49, 1.15, 9.0, "Форум Cursor, июль 2026 – ответы сотрудников Cursor")
+picture(s, "img/cursor-forum-colin.png", 0.49, 1.45, w=9.0)          # 2340×534 → 9.0×2.05
+picture(s, "img/cursor-forum-maximep.png", 0.49, 3.65, w=9.0)        # 2340×382 → 9.0×1.47
+notes(s, "Не промпт, а продуктовое решение: Cursor убрал семантический индекс, потому что модели справляются grep'ом. forum.cursor.com/t/…/165899")
+
+# ---- Bias агентов (c): Serena ----
+s = slide_blank(CH_BIAS, "Bias агентов")
+textbox(s, 0.49, 1.15, 9.0, 0.25, "Документация Serena – MCP-сервера с инструментами LSP для агентов, пост опубликован в октября 2026", size=11, color=GREY)
+picture(s, "img/serena-docs-attention.png", 0.49, 1.52, h=3.75)      # 1640×1082 → 5.68×3.75
+card(s, 6.4, 1.52, 3.1, 3.75, line=WHITE, size=12, gap=10, anchor=MSO_ANCHOR.MIDDLE, text=[
+    "«Описания встроенных инструментов Claude Code – почти 16k токенов; пользователь их не меняет»",
+    "«Почти невозможно убедить Opus 4.7 пользоваться Serena»",
+    ("Авторы дают отдельный системный промпт против этого смещения", {"color": GREY}),
+])
+notes(s, "Переход к LSP: Serena даёт агенту LSP, и её авторы пишут, что модель к ней сама не идёт. Демо LSP – на Claude Code + Serena. oraios.github.io/serena/02-usage/030_clients.html")
+
+# ---- Бенчмарк по моделям ----
+s = slide_blank(CH_BIAS, "Bias моделей")
+card(s, 0.49, 1.4, 4.4, 3.7, line=AMBER, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER,
+     text=[("TODO: бенчмарк по моделям", {"size": 16, "color": AMBER, "bold": True})])
+card(s, 5.1, 1.4, 4.4, 3.7, line=WHITE, size=12, gap=8, text=[
+    ("Пилот AgentConnect, август 2026", {"size": 13, "bold": True, "color": LILAC, "space_after": 8}),
+    ("Модели Claude, LSP доступен как инструмент:", {"color": GREY}),
+    ("•", "выбирали LSP в 0–6 % задач на поиск места в коде"),
+    ("•", "в 3 % задач на переименование"),
+    ("•", "принудительный LSP снизил долю успешных задач со 100 % до 89 %"),
+    ("agentconnect.md/blog/grep-beat-lsp-harness", {"size": 10.5, "color": GREY}),
+])
+anim(s, [0], [1])
+notes(s, "Оговорки – только здесь: пилот, 2–3 прогона на ячейку, rename через LSP не тестировали. Тезис статьи – «agent capability = model × harness»: "
+         "модель сама к LSP не идёт, а если заставить без доработки агента – становится хуже.")
+
+slide_plan(done={CH_INTRO, CH_APPR, CH_BIAS}, current="MCP для рефакторинга")
 
 # ---- MCP ----
 s = slide_blank("Готовые решения", "MCP для рефакторинга")
@@ -1088,7 +1081,22 @@ card(s, 5.1, 2.0, 4.4, 3.1, line=WHITE, size=11.5, gap=4, text=[
 ])
 anim(s, [0], [1], [2])
 
-slide_plan(done={CH_INTRO, CH_APPR, "MCP для рефакторинга"}, current="Советы пользователям агентов")
+slide_plan(done={CH_INTRO, CH_APPR, CH_BIAS, "MCP для рефакторинга"}, current="Советы пользователям агентов")
+
+# ---- Что выбрать ----
+s = slide_blank("Советы", "Что выбрать")
+rows = [
+    ("Текст", "Нет IDE: CI, скрипты, конфиги, чужая машина. Одно имя – одна функция, мест немного", GREY),
+    ("LSP", "Один язык, есть сервер. Нужны все использования и переименование; остальное – текстом", LILAC),
+    ("Движок IDE", "Есть IDE и индексы. Несколько языков, одноимённые функции, сотни мест – нужны гарантии", GREEN),
+]
+y = 1.4
+for name, text, col in rows:
+    card(s, 0.49, y, 2.2, 1.05, line=col, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER, text=[(name, {"size": 16, "bold": True})])
+    card(s, 2.85, y, 6.65, 1.05, line=col, anchor=MSO_ANCHOR.MIDDLE, size=12.5, text=text)
+    y += 1.2
+anim(s, [0, 1], [2, 3], [4, 5])
+notes(s, "Итог по выбору подхода – просьба оргкомитета. Ни один не «правильный»: у каждого ситуация, где он уместен.")
 
 # ---- Советы ----
 s = slide_blank("Советы", "Советы пользователям агентов")
