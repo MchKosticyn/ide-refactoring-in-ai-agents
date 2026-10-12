@@ -410,6 +410,7 @@ def slide_pros_cons(kicker, pros, cons, note=None):
          text=[("Плюсы", {"size": 17, "bold": True, "space_after": 12})] + [("•", p) for p in pros])
     card(s, 5.1, 1.4, 4.4, 3.7, line=RED, size=size, gap=gap,
          text=[("Минусы", {"size": 17, "bold": True, "space_after": 12})] + [("•", c) for c in cons])
+    anim(s, [0], [1])
     if note:
         notes(s, note)
     return s
@@ -527,33 +528,27 @@ from lxml import etree as _et
 _NS = {"p": "http://schemas.openxmlformats.org/presentationml/2006/main",
        "a": "http://schemas.openxmlformats.org/drawingml/2006/main"}
 
-def animate(slide, shapes, paragraphs=False):
-    """Фигуры появляются по клику, в порядке списка. paragraphs=True – для одной фигуры по абзацам."""
-    if not shapes:
+def animate(slide, groups):
+    """Появление по клику. groups – список групп; группа – список фигур, появляющихся одним кликом."""
+    groups = [g for g in groups if g]
+    if not groups:
         return
-    steps = []
-    if paragraphs:
-        sh = shapes[0]
-        n = len([p for p in sh.text_frame.paragraphs if p.text.strip()])
-        steps = [(sh.shape_id, i) for i in range(n)]
-    else:
-        steps = [(sh.shape_id, None) for sh in shapes]
     tid = [1]
     def nid():
         tid[0] += 1
         return str(tid[0])
-    def tgt(spid, para):
-        if para is None:
-            return f'<p:spTgt spid="{spid}"/>'
-        return f'<p:spTgt spid="{spid}"><p:txEl><p:pRg st="{para}" end="{para}"/></p:txEl></p:spTgt>'
+    def effect(spid, node_type):
+        return (f'<p:par><p:cTn id="{nid()}" presetID="1" presetClass="entr" presetSubtype="0" fill="hold" nodeType="{node_type}">'
+                f'<p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>'
+                f'<p:set><p:cBhvr><p:cTn id="{nid()}" dur="1" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst></p:cTn>'
+                f'<p:tgtEl><p:spTgt spid="{spid}"/></p:tgtEl><p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr>'
+                f'<p:to><p:strVal val="visible"/></p:to></p:set></p:childTnLst></p:cTn></p:par>')
     seqs = []
-    for spid, para in steps:
-        t = tgt(spid, para)
-        seqs.append(f'''<p:par><p:cTn id="{nid()}" fill="hold"><p:stCondLst><p:cond delay="indefinite"/></p:stCondLst><p:childTnLst>
-<p:par><p:cTn id="{nid()}" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>
-<p:par><p:cTn id="{nid()}" presetID="1" presetClass="entr" presetSubtype="0" fill="hold" nodeType="clickEffect"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>
-<p:set><p:cBhvr><p:cTn id="{nid()}" dur="1" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst></p:cTn><p:tgtEl>{t}</p:tgtEl><p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr><p:to><p:strVal val="visible"/></p:to></p:set>
-</p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par>''')
+    for g in groups:
+        inner = "".join(effect(sh.shape_id, "clickEffect" if i == 0 else "withEffect") for i, sh in enumerate(g))
+        seqs.append(f'<p:par><p:cTn id="{nid()}" fill="hold"><p:stCondLst><p:cond delay="indefinite"/></p:stCondLst><p:childTnLst>'
+                    f'<p:par><p:cTn id="{nid()}" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>{inner}'
+                    f'</p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par>')
     xml = f'''<p:timing xmlns:p="{_NS["p"]}" xmlns:a="{_NS["a"]}"><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst>
 <p:seq concurrent="1" nextAc="seek"><p:cTn id="{nid()}" dur="indefinite" nodeType="mainSeq"><p:childTnLst>{"".join(seqs)}</p:childTnLst></p:cTn>
 <p:prevCondLst><p:cond evt="onPrev" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:prevCondLst>
@@ -566,15 +561,18 @@ def animate(slide, shapes, paragraphs=False):
     slide._element.append(el)
 
 
+ANIM = {}
+
+
+def anim(slide, *groups):
+    """Задать анимацию слайда: группы индексов содержательных фигур (0 – первая после кикера, номера и заголовка).
+    Слайды без anim() появляются целиком: демо, скриншоты, таблицы, схемы."""
+    ANIM[slide.slide_id] = [list(g) for g in groups]
+
+
 def _qn2(tag):
     pfx, name = tag.split(":")
     return "{%s}%s" % (_NS[pfx], name)
-
-
-def animate_new(slide, start_count, paragraphs=False):
-    """Анимировать все фигуры, добавленные после start_count (snapshot = len(slide.shapes))."""
-    shapes = list(slide.shapes)[start_count:]
-    animate(slide, shapes, paragraphs=paragraphs)
 
 
 # =====================================================================
@@ -617,6 +615,7 @@ card(s, 5.18, 2.5, 4.1, 2.0, line=WHITE, size=12.5, gap=8, text=[
     ("Задача 2: применить", {"size": 15, "bold": True, "space_after": 10}),
     "Нужна корректность: правка не меняет, к какому методу привязан вызов, и не задевает чужое",
 ])
+anim(s, [0], [1], [2])
 notes(s, "Каждый проход дальше разбираем одинаково: найдены ли все места, только ли нужные правки, сохранено ли поведение – и цена: время, стоимость, ходы, токены, стартовый контекст.")
 
 # ---- Зачем это QA ----
@@ -629,6 +628,7 @@ card(s, 0.49, 1.4, 9.0, 2.31, line=WHITE, size=14, gap=10, anchor=MSO_ANCHOR.MID
 ])
 card(s, 0.49, 3.86, 9.0, 0.85, line=RED, size=12.5, anchor=MSO_ANCHOR.MIDDLE, text=
      "Сотни мест. Зелёные тесты не доказывают, что поведение то же: меняется сам тестовый код")
+anim(s, [0], [1])
 
 # ---- Кейс ----
 s = slide_blank(CH_INTRO, "Кейс: detekt")
@@ -652,6 +652,7 @@ card(s, 6.05, 3.15, 3.45, 1.95, line=WHITE, size=11.5, gap=3, margin=0.15, text=
     ("78 старых lint – им нужен compile = false", {"color": LILAC, "bold": True}),
     ("Не трогать: перегрузка lint(ktFile) – 36; FormattingRule.lint – 66", {"color": GREY}),
 ])
+anim(s, [0, 1], [2], [3])
 notes(s, "Ловушки не называем – всплывут в разборах. Тестовый DSL вашего проекта устроен так же: пара хелперов, сотни вызовов, правило на дисциплине.")
 
 # ---- Человек в IDE: видео ----
@@ -670,6 +671,7 @@ result_table(s, [
     (True, "Конфликт показан до применения; compile = false подставлен явно"),
 ], metrics=[("Время", "TODO"), ("Стоимость", "TODO")])
 textbox(s, 0.49, 5.1, 9.0, 0.35, "Можно ли быстрее?", size=14, color=LILAC, bold=True, align=PP_ALIGN.CENTER)
+anim(s, [0, 1], [2, 3], [4, 5], [6, 7], [8])
 notes(s, "Rename в занятое имя – IDE останавливает и показывает конфликт. Это то, что будем искать у агентов. "
          "Время и стоимость – по ускоренной записи с таймером. Порядок величины подтверждает история PR: оба коммита автора сделаны за 20 минут 3 января 2025 (11:12 и 11:32); "
          "при ставке $60/ч это около $30.")
@@ -704,7 +706,7 @@ slide_plan(done={CH_INTRO}, current=CH_APPR)
 # ---- Текстовый подход: что это ----
 s = slide_blank(CH_APPR, "Подход 1: текстовый")
 textbox(s, 0.49, 1.3, 9.0, 0.6,
-        "Агент работает с кодом как с текстом: символов для него не существует",
+        "Агент работает с кодом как с текстом: строки и подстроки, а не функции и вызовы",
         size=13, color=GREY)
 labels = [("Задача", "текстом"), ("Поиск", "по тексту: grep, ripgrep"),
           ("Чтение", "найденных файлов"), ("Правка", "текстом"), ("Результат", "diff")]
@@ -720,6 +722,7 @@ card(s, 0.49, 3.4, 9.0, 1.7, line=PURPLE, size=12, gap=4, text=[
     ("•", "Инструмент «правка фрагмента» – удалить / добавить / заменить; каждое место – отдельный вызов"),
     ("•", "Перезапись файла целиком – модель генерирует новый файл"),
 ])
+anim(s, range(0, 10), [10])
 
 # ---- Демо 1: Claude Code ----
 s = slide_demo(CH_APPR, "Подход 1: текстовый",
@@ -739,6 +742,7 @@ result_table(s, [
     (False, "Комментарий «not compileAndLint for performance reasons» стал «not lint for performance reasons»"),
     (False, "Два хелпера начали компилировать сотни сниппетов. Сборка зелёная"),
 ], metrics=[("Время", "13,7 мин"), ("Стоимость", "$4.41"), ("Ходы", "53"), ("Токены", "3,9M"), ("Контекст", "TODO")])
+anim(s, [0, 1], [2, 3], [4, 5], range(6, 11))
 notes(s, "Агент правильно выбрал порядок: сначала старые lint, потом rename; двойник в другом модуле обошёл. Промах – там, где имя не выглядит как вызов метода. "
          "Инструменты агента – поиск по тексту и правка текста.")
 
@@ -754,16 +758,19 @@ card(s, 0.49, 1.65, 9.0, 2.4, line=WHITE, size=15, font=MONO, gap=4, margin=0.3,
 card(s, 0.49, 4.25, 9.0, 0.85, line=RED, size=13, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER, text=[
     ("Receiver неявный – точки нет. Агент искал «.lint(» – этого места в выдаче не было", {"bold": True}),
 ])
+anim(s, [0, 1], [2])
 notes(s, "Второй такой же – BracesOnWhenStatementsSpec.kt. Для компилятора это тот же вызов Rule.lint, для grep – другая строка. "
          "Комментарий строкой выше – тот самый, который замена compileAndLint → lint превратила в «not lint for performance reasons».")
 
 # ---- Текстовый подход: плюсы и минусы ----
 s = slide_pros_cons("Подход 1: текстовый",
-    ["Нулевая цена входа: без индекса и IDE",
-     "Работает на некомпилирующемся коде"],
-    ["Имя ≠ символ: одноимённая FormattingRule.lint, комментарий",
-     "Символ ≠ имя: вызов без точки, неявный receiver",
-     "Правка не проверяет, что меняет; N мест – N операций"])
+    ["Ничего не нужно: ни индекса, ни IDE, ни запущенного проекта",
+     "Работает где угодно: CI, worktree, удалённая машина",
+     "Любой язык и формат файла"],
+    ["Одно имя – разные функции: FormattingRule.lint и комментарий попадают в замену",
+     "Та же функция – другая запись: вызов без точки в замену не попадает",
+     "Замена не проверяет результат: строка заменена – не значит, что вызов ведёт туда же",
+     "Каждое место – отдельная операция"])
 
 # ---- Текстовый подход: где ломается ----
 s = slide_blank("Подход 1: текстовый", "Где ломается")
@@ -773,13 +780,19 @@ card(s, 0.49, 1.5, 9.0, 1.4, line=WHITE, anchor=MSO_ANCHOR.MIDDLE, size=13, font
 ])
 card(s, 0.49, 3.1, 4.4, 1.9, line=RED, size=12.5, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("Полнота", {"bold": True, "space_after": 4}),
-    "Подстрока ≠ символ: пропуски и ложные попадания",
+    "Поиск по подстроке: пропускает одни места и захватывает чужие",
 ])
 card(s, 5.1, 3.1, 4.4, 1.9, line=RED, size=12.5, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("Корректность", {"bold": True, "space_after": 4}),
-    "Правка не знает, что меняет. «Прошло» не значит «заменило правильно»",
+    "После замены вызов может вести в другую функцию – замена этого не проверяет",
 ])
-notes(s, "Вывод: промах без сигнала, сборка зелёная, 53 хода и $4 – нужен инструмент, который видит символы, а не строки.")
+anim(s, [0], [1, 2])
+notes(s, "Вывод: промах без сигнала, сборка зелёная, 53 хода и $4 – нужен инструмент, который видит функции и их вызовы, а не строки.")
+
+# ---- Сравнение: после текста ----
+s = slide_blank("Сравнение", "Результат и цена")
+compare_table(s, upto="Текст")
+notes(s, "Пауза после подхода. Таблица растёт по ходу доклада: после каждого подхода – колонка.")
 
 # ---- Bias агентов (a): Codex и Claude Code ----
 def picture(s, path, x, y, w=None, h=None):
@@ -843,27 +856,30 @@ card(s, 5.1, 1.4, 4.4, 3.7, line=WHITE, size=12, gap=8, text=[
     ("•", "принудительный LSP снизил долю успешных задач со 100 % до 89 %"),
     ("agentconnect.md/blog/grep-beat-lsp-harness", {"size": 10.5, "color": GREY}),
 ])
+anim(s, [0], [1])
 notes(s, "Оговорки – только здесь: пилот, 2–3 прогона на ячейку, rename через LSP не тестировали. Тезис статьи – «agent capability = model × harness»: "
          "модель сама к LSP не идёт, а если заставить без доработки агента – становится хуже.")
 
 # ---- LSP: что это ----
 s = slide_blank(CH_APPR, "Подход 2: LSP")
-textbox(s, 0.49, 1.35, 9.0, 0.7,
-        "LSP (Language Server Protocol) – протокол между редактором или агентом и сервером языка. "
-        "Сервер – отдельный процесс, который разбирает код и отвечает на вопросы о нём. Один сервер на язык",
-        size=13, color=GREY)
+textbox(s, 0.49, 1.25, 9.0, 1.0, [
+        ("Символ – функция, класс или переменная вместе со всеми местами, где она используется", {"color": WHITE}),
+        ("LSP (Language Server Protocol) – протокол между редактором или агентом и сервером языка. "
+         "Сервер – отдельный процесс, который разбирает код и знает, какой текст к какому символу относится. Один сервер на язык", {}),
+        ], size=12.5, color=GREY)
 labels = [("Клиент", "редактор или агент"), ("Запрос", "«переименуй символ здесь»"),
           ("Сервер языка", "резолвит символы"), ("Правка", "список текстовых изменений; применяет клиент")]
 for i, (t, sub) in enumerate(labels):
-    card(s, X4N[i], 2.3, 1.67, 1.0, line=WHITE, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.05,
+    card(s, X4N[i], 2.4, 1.67, 1.0, line=WHITE, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.05,
          text=[(t, {"size": 14, "bold": True}), (sub, {"size": 10.5, "color": GREY})])
     if i < 3:
-        arrow(s, X4N[i] + 1.8, 2.73)
-card(s, 0.72, 3.6, 8.56, 1.5, line=GREEN, size=12, gap=4, text=[
+        arrow(s, X4N[i] + 1.8, 2.83)
+card(s, 0.72, 3.65, 8.56, 1.45, line=GREEN, size=12, gap=4, text=[
     ("Что даёт", {"size": 15, "bold": True, "space_after": 8}),
     ("•", "Переход к определению, поиск использований, переименование по символу"),
     ("•", "Серверы есть для всех основных языков: rust-analyzer, gopls, pyright; Kotlin LSP – пока экспериментальный"),
 ])
+anim(s, range(0, 8), [8])
 
 # ---- Демо 2: LSP ----
 s = slide_demo(CH_APPR, "Подход 2: LSP",
@@ -881,6 +897,7 @@ result_table(s, [
     (None, "TODO по записи"),
     (None, "TODO по записи"),
 ], metrics=[(k, v) for k, v in M_TODO])
+anim(s, [0, 1], [2, 3], [4, 5], range(6, 11))
 notes(s, "Rename отказал в нашем прогоне – лучше, чем применить без предупреждения. Но это выбор сервера, а не правило протокола, и продолжить после отказа нечем. "
          "Из пилота AgentConnect (август 2026): LSP точнее grep, но полнота у обоих около 0,66 – LSP не гарантия, что найдено всё.")
 
@@ -897,9 +914,9 @@ notes(s, "Минусы – уровень протокола. Что серве�
          "Вывод: символы видит, оба вызова без точки нашёл; но операция одна, конфликт как повезёт, один язык. Нужен движок.")
 
 # ---- Сравнение: после LSP ----
-s = slide_blank("Сравнение", "Результат и цена – пока")
+s = slide_blank("Сравнение", "Результат и цена")
 compare_table(s, upto="LSP")
-notes(s, "Таблица растёт по ходу доклада: после движка добавится четвёртая колонка.")
+notes(s, "Пауза после подхода. После движка добавится четвёртая колонка.")
 
 # ---- Движок: что это ----
 s = slide_blank(CH_APPR, "Подход 3: движок рефакторинга IDE (IntelliJ)")
@@ -927,6 +944,7 @@ card(s, 5.1, 2.77, 4.4, 1.63, line=GREEN, size=11, font=MONO, gap=1, text=[
 textbox(s, 0.49, 4.66, 9.0, 0.4,
         "PSI (Program Structure Interface) – модель кода: дерево + ссылки между узлами. IDE держит её в памяти и синхронизирует с редактором",
         size=11.5, color=LILAC, align=PP_ALIGN.CENTER)
+anim(s, [0, 1], [2], [3, 4])
 notes(s, "Агент решает, что переименовать и как поступить с конфликтом; движок ищет ссылки, проверяет конфликт, применяет. Рассматриваем только IntelliJ.")
 
 # ---- Veai ----
@@ -953,6 +971,7 @@ result_table(s, [
     (None, "TODO по записи"),
     (None, "TODO по записи"),
 ], metrics=[(k, v) for k, v in M_TODO])
+anim(s, [0, 1], [2, 3], [4, 5], range(6, 11))
 
 # ---- Движок: плюсы и минусы ----
 s = slide_pros_cons("Подход 3: движок IDE",
@@ -990,13 +1009,14 @@ card(s, 0.72, 4.05, 8.78, 1.05, line=RED, size=11.5, font=MONO, text=[
     "Class.forName(\"com.foo.Bar\")   – ссылка есть, переименуется",
     "Class.forName(prefix + name)   – runtime-рефлексия, не анализируется",
 ])
+anim(s, range(0, 8), [8], [9, 10])
 notes(s, "Ссылка – слой поверх дерева, поэтому плагин может добавить связь туда, где компилятор её не видит. Индексы – почему обход быстрый.")
 
 # ---- Корректность ----
 s = slide_blank("Подход 3: движок IDE", "Корректность")
-card(s, 0.72, 1.3, 8.56, 0.6, line=PURPLE, text="Проверки «имя занято» недостаточно – движок проверяет правку до применения",
+card(s, 0.72, 1.3, 8.56, 0.6, line=PURPLE, text="Правка примеряется на копии в памяти: конфликты видны до того, как тронут файл",
      size=13.5, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.1)
-steps = [("Копия вызова", "оригинал не трогаем"), ("Новое имя", "на копии"),
+steps = [("Копия вызова", "в памяти, файл не меняется"), ("Новое имя", "на копии"),
          ("Разрешение", "заново: какой метод?"), ("Другой метод", "→ конфликт")]
 for i, (t, sub) in enumerate(steps):
     card(s, X4N[i], 2.1, 1.67, 0.8, line=WHITE, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.05,
@@ -1016,6 +1036,7 @@ card(s, 5.58, 3.1, 3.7, 1.7, line=WHITE, size=11.5, gap=6, text=[
 arrow(s, 4.7, 3.85, w=0.6, h=0.16)
 textbox(s, 0.72, 4.85, 8.56, 0.45, "Конфликт «функция lint уже объявлена» – показан до применения",
         size=11.5, color=LILAC, bold=True, align=PP_ALIGN.CENTER)
+anim(s, [0], range(1, 8), [8, 9, 10], [11])
 notes(s, "Механизм для метода: копия выражения-вызова, новое имя, повторный резолв. На кейсе – конфликт объявления.")
 
 # ---- Атомарность ----
@@ -1034,6 +1055,7 @@ card(s, 0.49, 3.95, 9.0, 1.15, line=PURPLE, size=12, text=[
     ("ПРОВЕРКА АКТУАЛЬНОСТИ", {"size": 10.5, "color": LILAC, "bold": True, "space_after": 6}),
     "Код изменился между поиском и применением → рефакторинг не применяется; требуется повторный поиск",
 ])
+anim(s, [0], [1], [2])
 notes(s, "Контраст с текстом: там N мест – N независимых операций; здесь одна. Строка IDE: «There were changes in code after usages have been found».")
 
 # ---- Таблица ----
@@ -1064,6 +1086,7 @@ card(s, 5.1, 2.0, 4.4, 3.1, line=WHITE, size=11.5, gap=4, text=[
     ("•", "Move – перенос символа в другой файл или пакет"),
     ("•", "Safe Delete – удаление с проверкой использований"),
 ])
+anim(s, [0], [1], [2])
 
 slide_plan(done={CH_INTRO, CH_APPR, "MCP для рефакторинга"}, current="Советы пользователям агентов")
 
@@ -1077,6 +1100,7 @@ card(s, 5.1, 1.7, 4.4, 2.2, line=GREEN, size=12.5, gap=10, text=[
     ("Автоматическая проверка – обязательна", {"size": 15, "bold": True}),
     "Тесты, компиляция, линтер. В кейсе сборка была зелёной при изменённом поведении – хелперы тестами не покрыты",
 ])
+anim(s, [0], [1])
 
 # ---- Summary ----
 s = slide_blank("Summary", "Главные мысли")
@@ -1085,6 +1109,7 @@ three_cards(s, ["Рефакторинг – преобразование с га
     "Та же модель с grep и с движком – разный результат и разная цена. Считайте ходы, время и токены, а не только зелёные тесты",
     "Полнота, конфликты до правки, атомарность. Модель решает «что», движок делает «как». Отдайте его агенту",
 ], y=1.45, h=3.0)
+anim(s, [0], [1], [2])
 
 # ---- Спасибо ----
 s = prs.slides.add_slide(L_TEXT)
@@ -1097,23 +1122,12 @@ textbox(s, 5.17, 4.39, 4.42, 0.82, [
     ("Telegram-канал: @veai_devs", {"bold": True}),
 ], size=13, color=WHITE)
 
-# ---------- анимация: все содержательные фигуры появляются по клику ----------
-_NO_ANIM_TITLES = {"План доклада", "Спасибо", ""}
+# ---------- анимация: только там, где по клику появляется аргумент ----------
 for _sl in prs.slides:
-    _shapes = list(_sl.shapes)
-    if len(_shapes) < 4:
-        continue
-    _title = _shapes[2].text_frame.text if _shapes[2].has_text_frame else ""
-    if _title in _NO_ANIM_TITLES or _title.startswith("Спасибо") or _sl.slide_layout.name == "BLANK_2":
-        continue
-    _content = _shapes[3:]
-    # связующие стрелки и линии – не анимируем отдельно: появятся вместе со слайдом
-    _content = [sh for sh in _content if sh.shape_type not in (3,) and not (sh.has_text_frame is False and sh.width < Inches(0.7))]
-    # один большой список (single textbox с ≥3 абзацами и ничего больше) – по абзацам
-    if len(_content) == 1 and _content[0].has_text_frame and len([q for q in _content[0].text_frame.paragraphs if q.text.strip()]) >= 3:
-        animate(_sl, _content, paragraphs=True)
-    else:
-        animate(_sl, _content)
+    _spec = ANIM.get(_sl.slide_id)
+    if _spec:
+        _content = list(_sl.shapes)[3:]
+        animate(_sl, [[_content[i] for i in g] for g in _spec])
 
 # ---------- язык текста: без lang="ru" PowerPoint проверяет орфографию как английскую ----------
 from pptx.oxml.ns import qn as _qn
