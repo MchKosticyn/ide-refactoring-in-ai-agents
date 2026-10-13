@@ -276,7 +276,7 @@ def slide_title(title_lines, speaker, subtitle=None):
     s = prs.slides.add_slide(L_TITLE)
     _clear_placeholders(s)
     s.shapes.add_picture("veai_logo.png", Inches(0.4), Inches(0.4), width=Inches(1.01))
-    textbox(s, 0.4, 2.95, 9.0, 0.4, speaker, size=14, color=GREY)
+    textbox(s, 0.4, 2.78, 9.0, 0.53, speaker, size=14, color=GREY)
     textbox(s, 0.4, 3.32, 9.2, 2.0, title_lines, size=36, color=WHITE, bold=False,
             anchor=MSO_ANCHOR.TOP, line_spacing=1.0)
     if subtitle:
@@ -416,7 +416,8 @@ def slide_pros_cons(kicker, pros, cons, note=None):
     return s
 
 
-PLAN = ["Введение", "Подходы к рефакторингу в агентах", "Почему агенты правят текстом", "MCP для рефакторинга", "Советы пользователям агентов"]
+PLAN = ["Введение", "Подходы к рефакторингу в агентах", "MCP-серверы для рефакторинга", "Итоги"]
+APPROACHES = ["Текстовый подход", "LSP-серверы", "Инструменты IDE"]
 
 
 def slide_plan(done=(), current=None):
@@ -427,6 +428,27 @@ def slide_plan(done=(), current=None):
     tf.word_wrap = True
     first = True
     for title in PLAN:
+        p = tf.paragraphs[0] if first else tf.add_paragraph()
+        first = False
+        p.space_after = Pt(14)
+        _set_bullet(p)
+        r = p.add_run()
+        r.text = title
+        r.font.name = FONT
+        r.font.size = Pt(20)
+        r.font.color.rgb = GREEN if title in done else WHITE
+        r.font.bold = title == current
+    return s
+
+
+def slide_subplan(current=None, done=()):
+    """План главы «Подходы»: три подхода, текущий – жирным (пока в стиле списка; визуал – на обсуждении)."""
+    s = slide_blank(TALK_SHORT, "Подходы к рефакторингу в агентах")
+    tb = s.shapes.add_textbox(Inches(0.6), Inches(1.5), Inches(8.8), Inches(1.5))
+    tf = tb.text_frame
+    tf.word_wrap = True
+    first = True
+    for title in APPROACHES:
         p = tf.paragraphs[0] if first else tf.add_paragraph()
         first = False
         p.space_after = Pt(14)
@@ -468,13 +490,13 @@ X4 = [0.49, 2.78, 5.07, 7.36]       # четыре карточки в ряд
 X4N = [0.72, 3.01, 5.33, 7.61]      # четыре узкие карточки со стрелками
 
 
-COMPARE_COLS = ["Человек с IDE", "Текст", "LSP", "Движок IDE"]
+COMPARE_COLS = ["Человек с IDE", "Агент + текстовый подход", "Агент + LSP", "Агент + инструменты IDE"]
 COMPARE_ROWS = [
     ("Найдены все места", ["✓", "✗ 2 из 78", "✓", "TODO"]),
     ("Правки только по делу", ["✓", "✗ комментарий", "TODO", "TODO"]),
     ("Поведение сохранено", ["✓", "✗ сборка зелёная", "TODO", "TODO"]),
-    ("Время", ["TODO", "13,7 мин", "TODO", "TODO"]),
-    ("Стоимость", ["TODO", "$4.41", "TODO", "TODO"]),
+    ("Время", ["≈ 30 мин", "13,7 мин", "TODO", "TODO"]),
+    ("Стоимость", ["≈ $30", "$4.41", "TODO", "TODO"]),
     ("Ходы", ["–", "53", "TODO", "TODO"]),
     ("Токены", ["–", "3,9M", "TODO", "TODO"]),
     ("Стартовый контекст", ["–", "TODO", "TODO", "TODO"]),
@@ -491,7 +513,7 @@ def compare_table(s, upto=None):
     x = x0
     for i, c in enumerate(cols):
         if c:
-            textbox(s, x, y0, cw[i], 0.4, c, size=12, color=LILAC, bold=True, align=PP_ALIGN.CENTER)
+            textbox(s, x, y0, cw[i], 0.4, c, size=11 if n > 2 else 12, color=LILAC, bold=True, align=PP_ALIGN.CENTER)
         x += cw[i]
     hline(s, x0, y0 + 0.42, sum(cw), color=PURPLE, width=1.2)
     colmap = {"✓": GREEN, "✗": RED}
@@ -521,6 +543,28 @@ def two_columns(s, left_title, left_items, right_title, right_items,
     col(5.1, right_color, right_kicker, right_title, right_items)
 
 
+
+
+def picture(s, path, x, y, w=None, h=None):
+    """Картинка по ширине или высоте с сохранением пропорций, со скруглением как у карточек."""
+    from pptx.oxml.ns import qn as _q
+    if w is not None:
+        pic = s.shapes.add_picture(path, Inches(x), Inches(y), width=Inches(w))
+    else:
+        pic = s.shapes.add_picture(path, Inches(x), Inches(y), height=Inches(h))
+    geom = pic._element.spPr.find(_q("a:prstGeom"))
+    geom.set("prst", "roundRect")
+    av = geom.find(_q("a:avLst"))
+    for gd in list(av):
+        av.remove(gd)
+    adj = corner_adj(Emu(pic.width).inches, Emu(pic.height).inches)
+    av.append(av.makeelement(_q("a:gd"), {"name": "adj", "fmla": f"val {int(adj * 100000)}"}))
+    return pic
+
+
+def source_line(s, x, y, w, text):
+    """Подпись источника над картинкой – одна строка серым."""
+    textbox(s, x, y, w, 0.3, text, size=11, color=GREY)
 
 
 # ---------- анимация: появление по клику ----------
@@ -581,88 +625,113 @@ def _qn2(tag):
 
 CH_INTRO = "Введение"
 CH_APPR = "Подходы к рефакторингу в агентах"
-CH_BIAS = "Почему агенты правят текстом"
 MONO = "Menlo"
 M_TODO = [("Время", "TODO"), ("Стоимость", "TODO"), ("Ходы", "TODO"), ("Токены", "TODO"), ("Стартовый контекст", "TODO")]
 
 # ---- Титул ----
 s = slide_title(["Использование инструментов", "рефакторинга IDE в ИИ-агентах"],
-                "Спикер: Михаил Костицын")
+                ["Спикер: Михаил Костицын", "Эксперт: Максим Паршин"])
 
-# ---- О себе ----
-s = slide_blank(TALK_SHORT, "О себе")
-card(s, 0.49, 1.4, 9.0, 2.2, line=PURPLE, size=14, gap=8, anchor=MSO_ANCHOR.MIDDLE, text=[
-    ("•", "Ведущий разработчик Veai – ИИ-агента для разработчиков"),
-    ("•", "Семь лет в разработке, значительная часть – статический анализ программ и формальная верификация"),
-    ("•", "С 2023 года – разработка ИИ-агентов"),
-])
-card(s, 0.49, 3.85, 9.0, 0.9, line=WHITE, size=13, anchor=MSO_ANCHOR.MIDDLE, text=[
-    ("Эксперт доклада: TODO", {"color": AMBER}),
-])
+# ---- О нас ----
+s = slide_blank(TALK_SHORT, "О нас")
+people = [("Михаил Костицын", "Спикер", ["Ведущий разработчик Veai – ИИ-агента для разработчиков",
+                                        "Статический анализ и формальная верификация; ИИ-агенты с 2023 года"]),
+          ("Максим Паршин", "Эксперт доклада", ["TODO", "TODO"])]
+for i, (name, role, lines) in enumerate(people):
+    x = 0.49 + i * 4.6
+    card(s, x, 1.45, 4.4, 3.55, line=PURPLE if i == 0 else WHITE)
+    card(s, x + 0.25, 1.7, 1.5, 1.5, line=AMBER, size=10, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER, margin=0.05,
+         text=[("TODO: фото", {"color": AMBER, "bold": True})])
+    textbox(s, x + 1.95, 1.75, 2.3, 0.9, [(name, {"size": 16, "bold": True}), (role, {"size": 12, "color": LILAC})], size=16)
+    textbox(s, x + 0.25, 3.4, 3.9, 1.5, [(ln, {"color": todo_color(ln, WHITE)}) for ln in lines], size=12.5, color=WHITE, space_after=6)
 
 # ---- план ----
 slide_plan(current=CH_INTRO)
 
 # ---- Рамка ----
-s = slide_blank(CH_INTRO, "Рефакторинг – преобразование с гарантиями")
-card(s, 0.72, 1.5, 8.56, 0.7, line=PURPLE, text="Рефакторинг – изменение структуры кода без изменения поведения программы",
+s = slide_blank(CH_INTRO, "Определение")
+card(s, 0.72, 1.71, 8.56, 0.81, line=PURPLE, text="Рефакторинг – это изменение структуры кода без изменения поведения программы",
      size=15, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-card(s, 0.72, 2.5, 4.1, 2.0, line=WHITE, size=12.5, gap=8, text=[
+card(s, 0.72, 2.82, 4.1, 1.39, line=WHITE, size=12.5, gap=8, text=[
     ("Задача 1: найти все места", {"size": 15, "bold": True, "space_after": 10}),
-    "Нужна полнота. 97 % не годится",
+    "Нужна полнота: 97 % не годится",
     ("78 вызовов × 97 % = 2 пропуска", {"color": LILAC, "bold": True}),
 ])
-card(s, 5.18, 2.5, 4.1, 2.0, line=WHITE, size=12.5, gap=8, text=[
+card(s, 5.18, 2.82, 4.1, 1.39, line=WHITE, size=12.5, gap=8, text=[
     ("Задача 2: применить", {"size": 15, "bold": True, "space_after": 10}),
-    "Нужна корректность: правка не меняет, к какому методу привязан вызов, и не задевает чужое",
+    "Нужна корректность: правка не меняет поведение программы",
 ])
 anim(s, [0], [1], [2])
 notes(s, "Каждый проход дальше разбираем одинаково: найдены ли все места, только ли нужные правки, сохранено ли поведение – и цена: время, стоимость, ходы, токены, стартовый контекст.")
 
 # ---- Зачем это QA ----
 s = slide_blank(CH_INTRO, "Зачем это QA")
-card(s, 0.49, 1.4, 9.0, 2.31, line=WHITE, size=14, gap=10, anchor=MSO_ANCHOR.MIDDLE, text=[
+card(s, 0.49, 1.4, 9.0, 2.45, line=WHITE, size=16, gap=12, margin=0.35, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("•", "Миграция фреймворка: Selenium → Playwright, JUnit 4 → 5"),
     ("•", "Наведение структуры: PageObject, композиция фикстур"),
     ("•", "Смена тестового API проекта: хелперы, базовые классы"),
     ("•", "…"),
 ])
-card(s, 0.49, 3.86, 9.0, 0.85, line=RED, size=12.5, anchor=MSO_ANCHOR.MIDDLE, text=
-     "Сотни мест. Зелёные тесты не доказывают, что поведение то же: меняется сам тестовый код")
+card(s, 0.49, 4.1, 9.0, 0.9, line=RED, size=15, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, text=
+     "Зелёные тесты не всегда доказывают, что поведение то же")
 anim(s, [0], [1])
 
 # ---- Кейс ----
 s = slide_blank(CH_INTRO, "Кейс: detekt")
-textbox(s, 0.49, 1.16, 9.0, 0.48,
-        "detekt – статический анализатор Kotlin. У него есть тестовая библиотека, с помощью которой авторы правил пишут тесты",
-        size=12.5, color=GREY)
-card(s, 0.49, 1.73, 9.0, 1.3, line=WHITE, size=11.5, font=MONO, gap=1, margin=0.15, text=[
-    ("fun Rule.compileAndLint(code)  // компилирует сниппет (в CI), потом проверяет", {"color": LILAC}),
-    ("fun Rule.lint(code)            // только проверяет: сниппет может не компилироваться", {"color": LILAC}),
+textbox(s, 0.49, 1.2, 9.0, 0.7, [
+    ("detekt – статический анализатор Kotlin: набор правил, каждое ищет в коде свой вид проблем", {}),
+    ("Правило тестируют на сниппете кода: detekt-test прогоняет его и возвращает найденное", {}),
+], size=12.5, color=GREY)
+card(s, 0.49, 1.95, 9.0, 1.15, line=WHITE, size=11.5, font=MONO, gap=1, margin=0.15, anchor=MSO_ANCHOR.MIDDLE, text=[
+    ("fun Rule.compileAndLint(code)", {"color": LILAC, "bold": True}),
+    ("    сначала компилирует сниппет компилятором Kotlin (только в CI), потом прогоняет правило", {"color": GREY, "font": FONT}),
+    ("fun Rule.lint(code)", {"color": LILAC, "bold": True}),
+    ("    сразу прогоняет правило: сниппет может быть неполным и не компилироваться", {"color": GREY, "font": FONT}),
 ])
-card(s, 0.49, 3.15, 5.4, 1.95, line=PURPLE, size=12, gap=5, text=[
-    ("ЗАДАЧА", {"size": 10.5, "color": LILAC, "bold": True, "space_after": 6}),
-    ("Оставить одну функцию: lint(code, compile = true)", {"bold": True}),
-    "compileAndLint(code) → lint(code)",
-    "старый lint(code) → lint(code, compile = false), чтобы тесты работали как раньше",
-    ("PR #7873, февраль 2025", {"size": 11, "color": GREY}),
+card(s, 0.49, 3.25, 9.0, 1.65, line=PURPLE, size=12, gap=3, text=[
+    ("ЗАДАЧА: PR #7873 – одна функция вместо двух", {"size": 10.5, "color": LILAC, "bold": True, "space_after": 6}),
+    ("Оставить lint(code, compile = true)", {"bold": True}),
+    "compileAndLint(code) → lint(code) – 1428 вызовов",
+    "старый lint(code) → lint(code, compile = false) – 78 вызовов, чтобы тесты работали как раньше",
+    ("Не трогать: перегрузку lint(ktFile) – 36 вызовов; одноимённую FormattingRule.lint – 66", {"color": GREY}),
 ])
-card(s, 6.05, 3.15, 3.45, 1.95, line=WHITE, size=11.5, gap=3, margin=0.15, text=[
-    ("МАСШТАБ", {"size": 10.5, "color": LILAC, "bold": True, "space_after": 6}),
-    ("1428 вызовов compileAndLint", {}),
-    ("78 старых lint – им нужен compile = false", {"color": LILAC, "bold": True}),
-    ("Не трогать: перегрузка lint(ktFile) – 36; FormattingRule.lint – 66", {"color": GREY}),
-])
-anim(s, [0, 1], [2], [3])
-notes(s, "Ловушки не называем – всплывут в разборах. Тестовый DSL вашего проекта устроен так же: пара хелперов, сотни вызовов, правило на дисциплине.")
+anim(s, [0, 1], [2])
+notes(s, "«Только в CI»: compileAndLint компилирует сниппет, только если сборка запущена с -Pcompile-test-snippets=true; это делает отдельный job в GitHub Actions, "
+         "локально флаг выключен и обе функции ведут себя одинаково. В терминах detekt автор PR упрощает API тестовой библиотеки detekt-test: "
+         "вместо пары lint / compileAndLint – одна lint с параметром compile. Ловушки не называем – всплывут в разборах.")
 
-# ---- Человек в IDE: видео ----
-s = slide_demo(CH_INTRO, "Подход 0: человек с IDE",
-               ["Change Signature на старом lint: параметр compile, в вызовах – false",
-                "Rename compileAndLint → lint: конфликт «функция уже объявлена»",
-                "Слить тела вручную"],
-               metrics=[("Время", "TODO"), ("Стоимость", "TODO")],
-               sub=None, meta="IDE: IntelliJ IDEA")
+# ---- Человек в IDE: PR ----
+s = slide_blank(CH_INTRO, "Подход 0: человек с IDE")
+picture(s, "img/pr-7873-header.png", 0.49, 1.2, w=5.9)               # 1560×650 → 5.9×2.46
+card(s, 0.49, 3.8, 5.9, 1.3, line=PURPLE, size=11.5, gap=2, margin=0.15, anchor=MSO_ANCHOR.MIDDLE, text=[
+    ("3 ЯНВАРЯ 2025, ПО ДАТАМ АВТОРА КОММИТОВ", {"size": 9.5, "color": LILAC, "bold": True, "space_after": 3}),
+    "11:12 первый коммит  →  11:32 второй коммит  →  11:40 PR открыт",
+    ("≈ 30 минут · 134 файла · +1693 −1726", {"bold": True}),
+])
+card(s, 6.6, 1.2, 2.9, 3.9, line=WHITE, size=11, gap=5, margin=0.15, text=[
+    ("ЧТО ДЕЛАЛ АВТОР", {"size": 10, "color": LILAC, "bold": True, "space_after": 6}),
+    "1.  Change Signature на старом lint: параметр compile, в вызовах – false",
+    "2.  Rename compileAndLint → lint",
+    "3.  Слил тела функций вручную",
+    ("Инструменты IDE находят все использования, проверяют конфликты до правки, применяют всё разом", {"color": GREY, "size": 10.5}),
+])
+anim(s, [0], [1], [2])
+notes(s, "На GitHub у коммитов стоит 19 февраля – это дата rebase перед слиянием; авторские даты – 3 января, 11:12 и 11:32, PR открыт в 11:40. "
+         "Порядок операций – по диффу PR: параметр compile добавлен в старый lint, compileAndLint переименован, тела слиты.")
+
+# ---- Инструменты рефакторинга IDE: gif ----
+s = slide_blank(CH_INTRO, "Инструменты рефакторинга IDE")
+tools = [("Rename", "⇧F6 – переименовать символ и все его использования"),
+         ("Change Signature", "⌘F6 – добавить параметр, подставить значение в вызовы"),
+         ("Safe Delete", "⌘⌫ – удалить, если использований нет; иначе показать их")]
+for i, (t, sub) in enumerate(tools):
+    x = X3[i]
+    card(s, x, 1.25, 2.85, 2.4, line=AMBER, size=11, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER,
+         text=[("TODO: gif", {"color": AMBER, "bold": True})])
+    card(s, x, 3.8, 2.85, 1.3, line=WHITE, size=11, gap=3, margin=0.15, anchor=MSO_ANCHOR.MIDDLE,
+         text=[(t, {"size": 14, "bold": True, "space_after": 3}), (sub, {"color": GREY})])
+anim(s, [0, 1], [2, 3], [4, 5])
+notes(s, "Три инструмента, которые понадобятся в кейсе. Официальные gif JetBrains (блог 2020, светлая тема, Java) есть только для Rename и Change Signature – лучше записать свои на detekt в тёмной теме.")
 
 # ---- Человек в IDE: разбор ----
 s = slide_blank(CH_INTRO, "Подход 0: человек с IDE")
@@ -670,7 +739,7 @@ result_table(s, [
     (True, "Все 78 вызовов старого lint, включая два без точки"),
     (True, "FormattingRule.lint и lint(ktFile) не тронуты"),
     (True, "Конфликт показан до применения; compile = false подставлен явно"),
-], metrics=[("Время", "TODO"), ("Стоимость", "TODO")])
+], metrics=[("Время", "≈ 30 мин"), ("Стоимость", "≈ $30")])
 textbox(s, 0.49, 5.1, 9.0, 0.35, "Можно ли быстрее?", size=14, color=LILAC, bold=True, align=PP_ALIGN.CENTER)
 anim(s, [0, 1], [2, 3], [4, 5], [6, 7], [8])
 notes(s, "Rename в занятое имя – IDE останавливает и показывает конфликт. Это то, что будем искать у агентов. "
@@ -679,56 +748,35 @@ notes(s, "Rename в занятое имя – IDE останавливает и 
 
 # ---- Термины ----
 s = slide_blank(CH_INTRO, "ИИ-агент")
-card(s, 0.49, 1.5, 2.9, 3.3, line=WHITE, size=11.5, gap=4, text=[
+card(s, 0.49, 1.89, 2.9, 2.25, line=WHITE, size=11.5, gap=4, text=[
     ("КОНТЕКСТ", {"size": 10.5, "color": LILAC, "bold": True, "space_after": 2}),
     ("что модель видит", {"size": 12, "color": GREY, "space_after": 12}),
     ("•", "системный промпт"), ("•", "история чата"), ("•", "прочитанные файлы"), ("•", "результаты вызовов инструментов"),
 ])
-card(s, 3.75, 2.55, 2.5, 1.2, line=PURPLE, fill=RGBColor(0x1A, 0x12, 0x33), align=PP_ALIGN.CENTER,
+card(s, 3.75, 2.03, 2.5, 1.2, line=PURPLE, fill=RGBColor(0x1A, 0x12, 0x33), align=PP_ALIGN.CENTER,
      anchor=MSO_ANCHOR.MIDDLE, text=[("МОДЕЛЬ", {"size": 14, "bold": True}),
                                      ("генерирует сообщение\nили вызов инструмента", {"size": 10.5, "color": GREY})])
-arrow(s, 3.42, 3.08, w=0.3, h=0.14)
-arrow(s, 6.28, 3.08, w=0.3, h=0.14)
-card(s, 6.61, 1.5, 2.9, 3.3, line=WHITE, size=11.5, gap=4, text=[
-    ("ИНСТРУМЕНТЫ (TOOLS)", {"size": 10.5, "color": LILAC, "bold": True, "space_after": 2}),
-    ("что модель может вызвать", {"size": 12, "color": GREY, "space_after": 12}),
+arrow(s, 3.42, 2.56, w=0.3, h=0.14)
+arrow(s, 6.28, 2.56, w=0.3, h=0.14)
+card(s, 6.61, 1.89, 2.9, 2.25, line=WHITE, size=11.5, gap=4, text=[
+    ("ИНСТРУМЕНТЫ", {"size": 10.5, "color": LILAC, "bold": True, "space_after": 2}),
+    ("что модель может сделать", {"size": 12, "color": GREY, "space_after": 12}),
     ("•", "чтение файла"), ("•", "поиск по тексту"), ("•", "правка файла"), ("•", "запуск тестов"),
 ])
-ret = s.shapes.add_shape(MSO_SHAPE.LEFT_ARROW, Inches(3.42), Inches(4.4), Inches(3.16), Inches(0.16))
+ret = s.shapes.add_shape(MSO_SHAPE.LEFT_ARROW, Inches(3.42), Inches(3.74), Inches(3.16), Inches(0.16))
 ret.fill.solid(); ret.fill.fore_color.rgb = LILAC; ret.line.color.rgb = LILAC; ret.shadow.inherit = False
-textbox(s, 3.42, 4.58, 3.16, 0.3, "результат вызова", size=10.5, color=GREY, align=PP_ALIGN.CENTER)
-textbox(s, 0.49, 4.95, 9.0, 0.35,
+textbox(s, 3.42, 3.92, 3.16, 0.3, "результат вызова", size=10.5, color=GREY, align=PP_ALIGN.CENTER)
+textbox(s, 2.55, 4.84, 4.88, 0.25,
         "ИИ-агент = модель + контекст + инструменты",
         size=11.5, color=GREY, align=PP_ALIGN.CENTER)
 
-# ---- Синтаксис и семантика ----
-s = slide_blank(CH_INTRO, "Синтаксис и семантика")
-card(s, 0.49, 1.4, 4.4, 2.6, line=WHITE, size=13, gap=8, text=[
-    ("Синтаксис", {"size": 18, "bold": True, "space_after": 4}),
-    ("как написано", {"size": 13, "color": LILAC, "space_after": 10}),
-    ("•", "Буквы, слова, строки"),
-    ("•", "Структура: вызов, аргументы, блок"),
-    ("•", "Видно в самом тексте"),
-])
-card(s, 5.1, 1.4, 4.4, 2.6, line=GREEN, size=13, gap=8, text=[
-    ("Семантика", {"size": 18, "bold": True, "space_after": 4}),
-    ("что это значит", {"size": 13, "color": LILAC, "space_after": 10}),
-    ("•", "Какая именно функция вызвана, какого типа переменная"),
-    ("•", "Кто на кого ссылается"),
-    ("•", "В тексте этого нет – нужно разобрать программу целиком"),
-])
-card(s, 0.49, 4.2, 9.0, 0.9, line=PURPLE, size=13.5, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER, text=[
-    ("Одно и то же слово в двух местах – один синтаксис, семантика может быть разной", {"bold": True}),
-])
-anim(s, [0], [1], [2])
-notes(s, "Вводный термин. Пример из языка: «ключ» – одно слово, значение зависит от контекста. Подход 1 работает с синтаксисом, подходы 2 и 3 – с семантикой; на этом стоит весь доклад.")
-
 # ---- план ----
 slide_plan(done={CH_INTRO}, current=CH_APPR)
+slide_subplan(current="Текстовый подход")
 
 # ---- Текстовый подход: что это ----
 s = slide_blank(CH_APPR, "Подход 1: текстовый")
-textbox(s, 0.49, 1.3, 9.0, 0.6,
+textbox(s, 0.49, 1.38, 9.0, 0.28,
         "Агент работает с кодом как с текстом: строки и подстроки, а не функции и вызовы",
         size=13, color=GREY)
 labels = [("Задача", "текстом"), ("Поиск", "по тексту: grep, ripgrep"),
@@ -739,7 +787,7 @@ for i, (t, sub) in enumerate(labels):
          text=[(t, {"size": 13.5, "bold": True}), (sub, {"size": 10.5, "color": GREY})])
     if i < 4:
         arrow(s, xs5[i] + 1.62, 2.55, w=0.2, h=0.12)
-card(s, 0.49, 3.4, 9.0, 1.7, line=PURPLE, size=12, gap=4, text=[
+card(s, 0.49, 3.67, 9.0, 1.37, line=PURPLE, size=12, gap=4, text=[
     ("МЕХАНИЗМЫ ПРАВКИ", {"size": 10.5, "color": LILAC, "bold": True, "space_after": 8}),
     ("•", "Скрипт / regex по файлам – заменяет подстроку везде, где нашёл"),
     ("•", "Инструмент «правка фрагмента» – удалить / добавить / заменить; каждое место – отдельный вызов"),
@@ -804,15 +852,17 @@ notes(s, "Пример из прогонов 2026-10-10: в 4 из 5 агент 
 
 # ---- Сравнение: после текста ----
 s = slide_blank("Сравнение", "Результат и цена")
-compare_table(s, upto="Текст")
+compare_table(s, upto="Агент + текстовый подход")
 notes(s, "Пауза после подхода. Таблица растёт по ходу доклада: после каждого подхода – колонка.")
+
+slide_subplan(current="LSP-серверы", done={"Текстовый подход"})
 
 # ---- LSP: что это ----
 s = slide_blank(CH_APPR, "Подход 2: LSP")
-textbox(s, 0.49, 1.25, 9.0, 1.0, [
-        ("Символ – функция, класс или переменная вместе со всеми местами, где она используется", {"color": WHITE}),
-        ("LSP (Language Server Protocol) – протокол между редактором или агентом и сервером языка. "
-         "Сервер – отдельный процесс, который разбирает код и знает, какой текст к какому символу относится. Один сервер на язык", {}),
+textbox(s, 0.49, 1.25, 9.0, 0.9, [
+        "LSP (Language Server Protocol) – протокол между редактором или агентом и сервером языка",
+        "Сервер – отдельный процесс, который разбирает код и знает, какой текст к какому символу относится",
+        "Один сервер на язык",
         ], size=12.5, color=GREY)
 labels = [("Клиент", "редактор или агент"), ("Запрос", "«переименуй символ здесь»"),
           ("Сервер языка", "резолвит символы"), ("Правка", "список текстовых изменений; применяет клиент")]
@@ -864,8 +914,10 @@ notes(s, "Минусы – уровень протокола. Переимено
 
 # ---- Сравнение: после LSP ----
 s = slide_blank("Сравнение", "Результат и цена")
-compare_table(s, upto="LSP")
+compare_table(s, upto="Агент + LSP")
 notes(s, "Пауза после подхода. После движка добавится четвёртая колонка.")
+
+slide_subplan(current="Инструменты IDE", done={"Текстовый подход", "LSP-серверы"})
 
 # ---- Движок: что это ----
 s = slide_blank(CH_APPR, "Подход 3: движок рефакторинга IDE (IntelliJ)")
@@ -1055,32 +1107,8 @@ compare_table(s)
 notes(s, "Не читать вслух. У текста нет символа; у LSP символ есть, но только rename, один язык и конфликты как повезёт; у движка – модель проекта и проверка до правки. "
          "Ниша текста – некомпилирующийся код и нулевая цена входа. Строка контекста – ответ на «сколько стоят описания инструментов».")
 
-slide_plan(done={CH_INTRO, CH_APPR}, current=CH_BIAS)
-
 # ---- Bias агентов (a): Codex и Claude Code ----
-def picture(s, path, x, y, w=None, h=None):
-    """Картинка по ширине или высоте с сохранением пропорций, со скруглением как у карточек."""
-    from pptx.oxml.ns import qn as _q
-    if w is not None:
-        pic = s.shapes.add_picture(path, Inches(x), Inches(y), width=Inches(w))
-    else:
-        pic = s.shapes.add_picture(path, Inches(x), Inches(y), height=Inches(h))
-    geom = pic._element.spPr.find(_q("a:prstGeom"))
-    geom.set("prst", "roundRect")
-    av = geom.find(_q("a:avLst"))
-    for gd in list(av):
-        av.remove(gd)
-    adj = corner_adj(Emu(pic.width).inches, Emu(pic.height).inches)
-    av.append(av.makeelement(_q("a:gd"), {"name": "adj", "fmla": f"val {int(adj * 100000)}"}))
-    return pic
-
-
-def source_line(s, x, y, w, text):
-    """Подпись источника над картинкой – одна строка серым."""
-    textbox(s, x, y, w, 0.3, text, size=11, color=GREY)
-
-
-s = slide_blank(CH_BIAS, "Bias агентов")
+s = slide_blank(CH_APPR, "Bias агентов")
 source_line(s, 0.49, 1.15, 9.0, "Codex CLI – системный промпт")
 picture(s, "img/codex-prompt.png", 0.49, 1.45, w=7.6)                # 1800×464 → 7.6×1.96
 source_line(s, 0.49, 3.55, 9.0, "Claude Code – системный промпт в режиме bypass / auto, август 2026")
@@ -1090,14 +1118,14 @@ notes(s, "Это инструкция агента, а не выбор моде�
          "Документация Claude Code: на macOS и Linux Glob и Grep убраны из набора по умолчанию – поиск через find и grep в Bash. OpenCode: описание инструмента Edit предлагает replaceAll, «if you want to rename a variable».")
 
 # ---- Bias агентов (b): Cursor ----
-s = slide_blank(CH_BIAS, "Bias агентов")
+s = slide_blank(CH_APPR, "Bias агентов")
 source_line(s, 0.49, 1.15, 9.0, "Форум Cursor, июль 2026 – ответы сотрудников Cursor")
 picture(s, "img/cursor-forum-colin.png", 0.49, 1.45, w=9.0)          # 2340×534 → 9.0×2.05
 picture(s, "img/cursor-forum-maximep.png", 0.49, 3.65, w=9.0)        # 2340×382 → 9.0×1.47
 notes(s, "Не промпт, а продуктовое решение: Cursor убрал семантический индекс, потому что модели справляются grep'ом. forum.cursor.com/t/…/165899")
 
 # ---- Bias агентов (c): Serena ----
-s = slide_blank(CH_BIAS, "Bias агентов")
+s = slide_blank(CH_APPR, "Bias агентов")
 textbox(s, 0.49, 1.15, 9.0, 0.25, "Документация Serena – MCP-сервера с инструментами LSP для агентов, пост опубликован в октября 2026", size=11, color=GREY)
 picture(s, "img/serena-docs-attention.png", 0.49, 1.52, h=3.75)      # 1640×1082 → 5.68×3.75
 card(s, 6.4, 1.52, 3.1, 3.75, line=WHITE, size=12, gap=10, anchor=MSO_ANCHOR.MIDDLE, text=[
@@ -1108,7 +1136,7 @@ card(s, 6.4, 1.52, 3.1, 3.75, line=WHITE, size=12, gap=10, anchor=MSO_ANCHOR.MID
 notes(s, "Переход к LSP: Serena даёт агенту LSP, и её авторы пишут, что модель к ней сама не идёт. Демо LSP – на Claude Code + Serena. oraios.github.io/serena/02-usage/030_clients.html")
 
 # ---- Бенчмарк по моделям ----
-s = slide_blank(CH_BIAS, "Bias моделей")
+s = slide_blank(CH_APPR, "Bias моделей")
 card(s, 0.49, 1.4, 4.4, 3.7, line=AMBER, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER,
      text=[("TODO: бенчмарк по моделям", {"size": 16, "color": AMBER, "bold": True})])
 card(s, 5.1, 1.4, 4.4, 3.7, line=WHITE, size=12, gap=8, text=[
@@ -1123,7 +1151,7 @@ anim(s, [0], [1])
 notes(s, "Оговорки – только здесь: пилот, 2–3 прогона на ячейку, rename через LSP не тестировали. Тезис статьи – «agent capability = model × harness»: "
          "модель сама к LSP не идёт, а если заставить без доработки агента – становится хуже.")
 
-slide_plan(done={CH_INTRO, CH_APPR, CH_BIAS}, current="MCP для рефакторинга")
+slide_plan(done={CH_INTRO, CH_APPR}, current="MCP-серверы для рефакторинга")
 
 # ---- MCP ----
 s = slide_blank("Готовые решения", "MCP для рефакторинга")
@@ -1147,10 +1175,10 @@ card(s, 5.1, 2.0, 4.4, 3.1, line=WHITE, size=11.5, gap=4, text=[
 ])
 anim(s, [0], [1], [2])
 
-slide_plan(done={CH_INTRO, CH_APPR, CH_BIAS, "MCP для рефакторинга"}, current="Советы пользователям агентов")
+slide_plan(done={CH_INTRO, CH_APPR, "MCP-серверы для рефакторинга"}, current="Итоги")
 
 # ---- Что выбрать ----
-s = slide_blank("Советы", "Что выбрать")
+s = slide_blank("Итоги", "Что выбрать")
 rows = [
     ("Текст", "Нет IDE: CI, скрипты, конфиги, чужая машина. Одно имя – одна функция, мест немного", GREY),
     ("LSP", "Один язык, есть сервер. Нужны все использования и переименование; остальное – текстом", LILAC),
@@ -1165,7 +1193,7 @@ anim(s, [0, 1], [2, 3], [4, 5])
 notes(s, "Итог по выбору подхода – просьба оргкомитета. Ни один не «правильный»: у каждого ситуация, где он уместен.")
 
 # ---- Советы ----
-s = slide_blank("Советы", "Советы пользователям агентов")
+s = slide_blank("Итоги", "Советы пользователям агентов")
 card(s, 0.49, 1.7, 4.4, 2.2, line=GREEN, size=12.5, gap=10, text=[
     ("Рефакторинг – отдельным коммитом", {"size": 15, "bold": True}),
     "Отдельно от изменения поведения. Ревью читаемо, откат возможен",
@@ -1177,7 +1205,7 @@ card(s, 5.1, 1.7, 4.4, 2.2, line=GREEN, size=12.5, gap=10, text=[
 anim(s, [0], [1])
 
 # ---- Summary ----
-s = slide_blank("Summary", "Главные мысли")
+s = slide_blank("Итоги", "Главные мысли")
 three_cards(s, ["Рефакторинг – преобразование с гарантиями", "Дело в инструментах, не в модели", "Инструмент рефакторинга уже есть – в IDE"], [
     "Полнота при поиске, корректность при применении",
     "Та же модель с grep и с движком – разный результат и разная цена. Считайте ходы, время и токены, а не только зелёные тесты",
