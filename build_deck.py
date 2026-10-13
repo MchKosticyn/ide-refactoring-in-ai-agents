@@ -937,19 +937,63 @@ notes(s, "Полнота и корректность – далее по сла�
          "Архитектурные изменения – не рефакторинг в смысле движка; это оговорка, не минус.")
 
 # ---- PSI ----
+def dashed_arrow(slide, x1, y1, x2, y2, color=GREEN, width=1.5):
+    """Пунктирная стрелка-коннектор (ссылка на схемах)."""
+    from pptx.enum.dml import MSO_LINE
+    from pptx.oxml.ns import qn as _q
+    ln = slide.shapes.add_connector(1, Inches(x1), Inches(y1), Inches(x2), Inches(y2))
+    ln.line.color.rgb = color
+    ln.line.width = Pt(width)
+    ln.line.dash_style = MSO_LINE.DASH
+    ln_el = ln.line._get_or_add_ln()
+    ln_el.append(ln_el.makeelement(_q("a:tailEnd"), {"type": "triangle", "w": "med", "len": "med"}))
+    return ln
+
+
 s = slide_blank("Подход 3: движок IDE", "PSI: как IDE видит код")
-card(s, 0.49, 1.3, 5.6, 3.8, line=AMBER, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER,
-     text=[("TODO: скриншот PSI Viewer на вызове lint(\"fun f() { $code }\")", {"size": 13, "color": AMBER, "bold": True})])
-card(s, 6.3, 1.3, 3.2, 1.15, line=WHITE, size=11.5, gap=2, anchor=MSO_ANCHOR.MIDDLE, text=[
-    ("Дерево – синтаксис", {"size": 13.5, "bold": True}), ("Как код записан: вызов, имя, аргументы", {"color": GREY})])
-card(s, 6.3, 2.62, 3.2, 1.15, line=GREEN, size=11.5, gap=2, anchor=MSO_ANCHOR.MIDDLE, text=[
-    ("Ссылка – семантика", {"size": 13.5, "bold": True}), ("Узел lint → объявление Rule.lint. Текст тот же, цель может быть другой", {"color": GREY})])
-card(s, 6.3, 3.94, 3.2, 1.15, line=WHITE, size=11.5, gap=2, anchor=MSO_ANCHOR.MIDDLE, text=[
-    ("Индексы", {"size": 13.5, "bold": True}), ("Где какое имя встречается – обход ссылок быстрый", {"color": GREY})])
-textbox(s, 0.49, 5.15, 9.0, 0.3, "Модель кода живёт в памяти IDE и синхронизируется с редактором при каждой правке",
+_i = lambda: len(s.shapes) - 3          # индекс следующей содержательной фигуры
+g_code = _i()
+card(s, 0.49, 1.2, 9.0, 0.5, line=WHITE, size=13, font=MONO, anchor=MSO_ANCHOR.MIDDLE, margin=0.2,
+     text=[("val findings = lint(\"fun f() { $code }\")", {})])
+g_tree = _i()
+textbox(s, 0.49, 1.85, 3.0, 0.3, "ДЕРЕВО – СИНТАКСИС", size=10.5, color=LILAC, bold=True)
+NW, NH = 2.75, 0.4
+nodes = [("PROPERTY", "", 0.6, 2.2, WHITE), ("CALL_EXPRESSION", "", 0.95, 2.72, WHITE),
+         ("REFERENCE_EXPRESSION", "lint", 1.3, 3.24, GREEN), ("VALUE_ARGUMENT_LIST", "", 1.3, 3.76, WHITE),
+         ("STRING_TEMPLATE", "\"fun f() …\"", 1.65, 4.28, WHITE)]
+NWS = {4: 3.1}   # ширина узла с длинным текстом
+for name, val, x, y, col in nodes:
+    paras = [(name, {"size": 10.5, "bold": True, "color": col if col is GREEN else WHITE})]
+    card(s, x, y, NWS.get(nodes.index((name, val, x, y, col)), NW), NH, line=col, size=10.5, font=MONO, margin=0.12, anchor=MSO_ANCHOR.MIDDLE,
+         text=[(name + ("   " + val if val else ""), {"size": 10.5, "bold": not val, "color": col if col is GREEN else WHITE})])
+# линии дерева: от родителя вниз и к ребёнку
+edges = [(0, [1]), (1, [2, 3]), (3, [4])]
+for pi, kids in edges:
+    px, py = nodes[pi][2], nodes[pi][3]
+    last = nodes[kids[-1]]
+    vline(s, px + 0.18, py + NH, last[3] + NH / 2 - (py + NH), color=GREY, width=1.0)
+    for ki in kids:
+        kx, ky = nodes[ki][2], nodes[ki][3]
+        hline(s, px + 0.18, ky + NH / 2, kx - (px + 0.18), color=GREY, width=1.0)
+g_ref = _i()
+textbox(s, 5.9, 1.85, 3.6, 0.3, "ССЫЛКА – СЕМАНТИКА", size=10.5, color=LILAC, bold=True)
+dashed_arrow(s, 1.3 + NW + 0.05, 3.24 + NH / 2, 5.85, 2.95 + 0.4)
+textbox(s, 4.1, 2.8, 1.8, 0.45, "разрешается по типам и импортам", size=9.5, color=GREEN, align=PP_ALIGN.CENTER)
+card(s, 5.9, 2.95, 3.6, 0.8, line=GREEN, size=11, font=MONO, gap=1, margin=0.15, anchor=MSO_ANCHOR.MIDDLE, text=[
+    ("RuleExtensions.kt (detekt-test)", {"size": 9.5, "color": GREY, "font": FONT}),
+    ("fun Rule.lint(content, …)", {"color": GREEN}),
+])
+g_other = _i()
+card(s, 5.9, 3.95, 3.6, 0.8, line=GREY, size=11, font=MONO, gap=1, margin=0.15, anchor=MSO_ANCHOR.MIDDLE, text=[
+    ("TestFiles.kt – не выбрана: другой тип receiver", {"size": 9.5, "color": GREY, "font": FONT}),
+    ("fun FormattingRule.lint(content)", {"color": GREY}),
+])
+g_cap = _i()
+textbox(s, 0.49, 5.0, 9.0, 0.35, "В настоящем дереве у этой строки 15 узлов. Индексы хранят, где какое имя встречается, – обход ссылок быстрый",
         size=10.5, color=LILAC, align=PP_ALIGN.CENTER)
-anim(s, [1], [2], [3])
-notes(s, "Скриншот: IntelliJ, PSI Viewer на BracesOnIfStatementsSpec.kt:2213. Дерево – то, что видит и парсер; ссылка – то, чего нет у текста: узел знает, к какому объявлению относится.")
+anim(s, [g_code], range(g_tree, g_ref), range(g_ref, g_other), [g_other], [g_cap])
+notes(s, "Дерево – то, что видит и парсер: синтаксис. Ссылка – то, чего нет у текста: узел lint знает, к какому объявлению относится, и выбор зависит от типа receiver и импортов. "
+         "Одинаковый текст subject.lint(code) в detekt-formatting разрешается в FormattingRule.lint. Индексы – почему обход всех ссылок на объявление быстрый.")
 
 # ---- Полнота ----
 s = slide_blank("Подход 3: движок IDE", "Полнота")
