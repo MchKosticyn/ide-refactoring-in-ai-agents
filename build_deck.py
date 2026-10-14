@@ -397,6 +397,11 @@ def result_table(s, statuses, metrics=None, banner=None):
         col = AMBER if ok is None else (GREEN if ok else RED)
         sym = "◐" if ok is None else ("✓" if ok else "✗")
         textbox(s, 0.49, y, 2.4, 1.0, name, size=16, color=WHITE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
+        if not text:
+            card(s, 2.95, y, 6.55, 1.0, line=col, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER,
+                 text=[(sym, {"size": 26, "bold": True, "color": col})])
+            y += 1.2
+            continue
         card(s, 2.95, y, 6.55, 1.0, line=col, anchor=MSO_ANCHOR.MIDDLE, margin=0.25,
              text=[(f"{sym}  {text}", {"size": 15})], color=WHITE)
         p = s.shapes[-1].text_frame.paragraphs[0]
@@ -456,15 +461,22 @@ def slide_plan(done=(), current=None):
 
 
 def slide_subplan(current=None, done=()):
-    """План главы «Подходы»: три подхода в ряд со стрелками; текущий – фиолетовая рамка, пройденные – зелёные."""
-    s = slide_blank(TALK_SHORT, "Подходы к рефакторингу в агентах")
+    """План главы «Подходы»: показываются только пройденные (зелёные) и текущий (фиолетовый); будущие – нет."""
+    s = prs.slides.add_slide(L_TEXT)
+    _clear_placeholders(s)
+    bg_glow(s)
+    _chrome(s, TALK_SHORT)
+    textbox(s, 0.4, 0.55, 9.2, 0.7, "Подходы к рефакторингу в агентах", size=26, color=WHITE)
+    geo = [(0.67, 2.49), (3.79, 2.41), (6.92, 2.31)]   # x, w – раскладка Михаила
     for i, title in enumerate(APPROACHES):
-        x = X3[i]
-        col = GREEN if title in done else (PURPLE if title == current else WHITE)
-        card(s, x, 1.9, 2.85, 1.5, line=col, width=2.25 if title == current else 1.5, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER,
+        if title != current and title not in done:
+            break
+        x, w = geo[i]
+        col = GREEN if title in done else PURPLE
+        card(s, x, 1.9, w, 1.5, line=col, width=2.25 if title == current else 1.5, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER,
              text=[(str(i + 1), {"size": 26, "bold": True, "color": col}), (title, {"size": 15, "bold": title == current, "color": WHITE if title == current else col})])
-        if i < 2:
-            arrow(s, x + 2.9, 2.58, w=0.22, h=0.14, color=GREY)
+        if i < 2 and APPROACHES[i + 1] == current:
+            arrow(s, x + w + 0.2, 2.58, w=0.22, h=0.14, color=GREY)
     return s
 
 
@@ -683,10 +695,7 @@ anim(s, [0], [1])
 
 # ---- Кейс ----
 s = slide_blank(CH_INTRO, "Кейс: detekt")
-textbox(s, 0.49, 1.2, 9.0, 0.7, [
-    ("detekt – статический анализатор Kotlin: набор правил, каждое ищет в коде свой вид проблем", {}),
-    ("Правило тестируют на сниппете кода: detekt-test прогоняет его и возвращает найденное", {}),
-], size=12.5, color=GREY)
+textbox(s, 0.49, 1.29, 9.0, 0.27, "detekt – статический анализатор Kotlin", size=12.5, color=GREY)
 card(s, 0.49, 1.95, 9.0, 1.15, line=WHITE, size=11.5, font=MONO, gap=1, margin=0.15, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("fun Rule.compileAndLint(code)", {"color": LILAC, "bold": True}),
     ("    сначала компилирует сниппет компилятором Kotlin (только в CI), потом прогоняет правило", {"color": GREY, "font": FONT}),
@@ -694,7 +703,7 @@ card(s, 0.49, 1.95, 9.0, 1.15, line=WHITE, size=11.5, font=MONO, gap=1, margin=0
     ("    сразу прогоняет правило: сниппет может быть неполным и не компилироваться", {"color": GREY, "font": FONT}),
 ])
 card(s, 0.49, 3.5, 9.0, 1.57, line=PURPLE, size=12, gap=3, text=[
-    ("ЗАДАЧА: PR #7873 – одна функция вместо двух", {"size": 10.5, "color": LILAC, "bold": True, "space_after": 6}),
+    ("ЗАДАЧА: PR #7873", {"size": 10.5, "color": LILAC, "bold": True, "space_after": 6}),
     ("Оставить одну функцию: lint(code, compile = true)", {"bold": True}),
     "compileAndLint(code) → lint(code) – 1428 вызовов",
     "старый lint(code) → lint(code, compile = false) – 78 вызовов, чтобы тесты работали как раньше",
@@ -706,12 +715,9 @@ notes(s, "«Только в CI»: compileAndLint компилирует снип
          "вместо пары lint / compileAndLint – одна lint с параметром compile. Ловушки не называем – всплывут в разборах.")
 
 # ---- Человек в IDE: PR ----
-s = slide_blank(CH_INTRO, "Подход 0: человек с IDE")
-picture(s, "img/pr-7873-header.png", 0.95, 1.15, w=8.1)               # 1560×650 → 8.1×3.38
-card(s, 0.95, 4.65, 8.1, 0.55, line=PURPLE, size=12.5, margin=0.15, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER,
-     text=[("Два коммита за 20 минут, PR открыт через 8 минут после второго – ≈ 30 минут работы", {"bold": True})])
-anim(s, [0], [1])
-notes(s, "На GitHub у коммитов стоит 19 февраля – это дата rebase перед слиянием; авторские даты – 3 января 2025, 11:12 и 11:32, PR открыт в 11:40. "
+s = slide_blank(CH_INTRO, "Кейс: detekt")
+picture(s, "img/pr-7873-header.png", 0.58, 1.39, w=8.85)              # 1560×650 → 8.85×3.69
+notes(s, "Два коммита за 20 минут, PR открыт через 8 минут после второго – около 30 минут работы. На GitHub у коммитов стоит 19 февраля – это дата rebase перед слиянием; авторские даты – 3 января 2025, 11:12 и 11:32, PR открыт в 11:40. "
          "Что делал автор (по диффу PR): Change Signature на старом lint – параметр compile, в вызовах false; Rename compileAndLint → lint; тела слил вручную. "
          "134 файла, +1693 −1726.")
 
@@ -732,8 +738,8 @@ notes(s, "Три инструмента, которые понадобятся �
 # ---- Человек в IDE: разбор ----
 s = slide_blank(CH_INTRO, "Подход 0: человек с IDE")
 result_table(s, [
-    (True, "все 78 мест"),
-    (True, "конфликт показан до правки"),
+    (True, ""),
+    (True, ""),
 ], metrics=[("Время", "≈ 30 мин"), ("Стоимость", "≈ $30")])
 textbox(s, 0.49, 5.1, 9.0, 0.35, "Можно ли быстрее?", size=14, color=LILAC, bold=True, align=PP_ALIGN.CENTER)
 anim(s, [0, 1], [2, 3], [4, 5], [6])
@@ -823,8 +829,8 @@ s = slide_pros_cons("Подход 1: текстовый",
 
 # ---- Текстовый подход: где ломается ----
 s = slide_blank("Подход 1: текстовый", "Где ломается")
-textbox(s, 0.49, 1.15, 9.0, 0.3, "Одна строка – две разные функции", size=12, color=GREY)
-card(s, 0.49, 1.45, 9.0, 1.85, line=WHITE, size=12.5, font=MONO, gap=2, margin=0.25, anchor=MSO_ANCHOR.MIDDLE, text=[
+textbox(s, 0.49, 1.22, 9.0, 0.26, "Одна строка, но две разные функции", size=12, color=GREY)
+card(s, 0.49, 1.7, 9.0, 1.6, line=WHITE, size=12.5, font=MONO, gap=2, margin=0.25, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("detekt-rules-style/…/UnusedParameterSpec.kt", {"color": GREY, "size": 10.5}),
     ("    subject.lint(code)   // Rule.lint – та, что меняем", {"color": WHITE, "space_after": 6}),
     ("detekt-formatting/…/IndentationSpec.kt", {"color": GREY, "size": 10.5}),
@@ -995,105 +1001,77 @@ def dashed_arrow(slide, x1, y1, x2, y2, color=GREEN, width=1.5):
 
 
 s = slide_blank("Подход 3: движок IDE", "PSI: как IDE видит код")
-_i = lambda: len(s.shapes) - 3          # индекс следующей содержательной фигуры
-g_code = _i()
-card(s, 0.49, 1.2, 9.0, 0.5, line=WHITE, size=13, font=MONO, anchor=MSO_ANCHOR.MIDDLE, margin=0.2,
-     text=[("val findings = lint(\"fun f() { $code }\")", {})])
-g_tree = _i()
-NW, NH = 2.75, 0.4
-nodes = [("PROPERTY", "", 0.6, 2.2, WHITE), ("CALL_EXPRESSION", "", 0.95, 2.72, WHITE),
-         ("REFERENCE_EXPRESSION", "lint", 1.3, 3.24, GREEN), ("VALUE_ARGUMENT_LIST", "", 1.3, 3.76, WHITE),
-         ("STRING_TEMPLATE", "\"fun f() …\"", 1.65, 4.28, WHITE)]
-NWS = {4: 3.1}   # ширина узла с длинным текстом
-for name, val, x, y, col in nodes:
-    paras = [(name, {"size": 10.5, "bold": True, "color": col if col is GREEN else WHITE})]
-    card(s, x, y, NWS.get(nodes.index((name, val, x, y, col)), NW), NH, line=col, size=10.5, font=MONO, margin=0.12, anchor=MSO_ANCHOR.MIDDLE,
-         text=[(name + ("   " + val if val else ""), {"size": 10.5, "bold": not val, "color": col if col is GREEN else WHITE})])
-# линии дерева: от родителя вниз и к ребёнку
-edges = [(0, [1]), (1, [2, 3]), (3, [4])]
-for pi, kids in edges:
-    px, py = nodes[pi][2], nodes[pi][3]
-    last = nodes[kids[-1]]
-    vline(s, px + 0.18, py + NH, last[3] + NH / 2 - (py + NH), color=GREY, width=1.0)
-    for ki in kids:
-        kx, ky = nodes[ki][2], nodes[ki][3]
-        hline(s, px + 0.18, ky + NH / 2, kx - (px + 0.18), color=GREY, width=1.0)
-g_ref = _i()
-dashed_arrow(s, 1.3 + NW + 0.05, 3.24 + NH / 2, 5.85, 2.95 + 0.4)
-textbox(s, 4.1, 2.8, 1.8, 0.45, "разрешается по типам и импортам", size=9.5, color=GREEN, align=PP_ALIGN.CENTER)
-card(s, 5.9, 2.95, 3.6, 0.8, line=GREEN, size=11, font=MONO, gap=1, margin=0.15, anchor=MSO_ANCHOR.MIDDLE, text=[
-    ("RuleExtensions.kt (detekt-test)", {"size": 9.5, "color": GREY, "font": FONT}),
-    ("fun Rule.lint(content, …)", {"color": GREEN}),
+PX, PY, PW = 0.49, 1.2, 6.2                      # картинка на слайде
+SC = PW / 2570                                   # дюймов на пиксель кропа (crop origin 30,260 в screenshot1.png)
+def px(x, y):
+    return PX + (x - 30) * SC, PY + (y - 260) * SC
+picture(s, "img/psi-viewer.png", PX, PY, w=PW)   # 2570×1520 → 6.2×3.67
+def outline(x1, y1, x2, y2, col=GREEN):
+    ax, ay = px(x1, y1); bx, by = px(x2, y2)
+    r = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(ax - 0.04), Inches(ay - 0.04), Inches(bx - ax + 0.08), Inches(by - ay + 0.08))
+    r.adjustments[0] = 0.3; r.fill.background(); r.line.color.rgb = col; r.line.width = Pt(2); r.shadow.inherit = False
+    return r
+outline(815, 492, 930, 557)                      # токен lint в коде
+outline(585, 1398, 1105, 1462)                   # узел REFERENCE_EXPRESSION
+nx, ny = px(1105, 1430)
+card(s, 7.0, 3.35, 2.5, 1.0, line=GREEN, size=11, font=MONO, gap=1, margin=0.15, anchor=MSO_ANCHOR.MIDDLE, text=[
+    ("RuleExtensions.kt", {"size": 9.5, "color": GREY, "font": FONT}),
+    ("fun Rule.lint(content, …)", {"color": GREEN, "bold": True}),
 ])
-g_other = _i()
-card(s, 5.9, 3.95, 3.6, 0.8, line=GREY, size=11, font=MONO, gap=1, margin=0.15, anchor=MSO_ANCHOR.MIDDLE, text=[
-    ("TestFiles.kt – не выбрана: другой тип receiver", {"size": 9.5, "color": GREY, "font": FONT}),
-    ("fun FormattingRule.lint(content)", {"color": GREY}),
-])
-g_cap = _i()
-textbox(s, 0.49, 5.0, 9.0, 0.35, "В настоящем дереве у этой строки 15 узлов. Индексы хранят, где какое имя встречается, – обход ссылок быстрый",
-        size=10.5, color=LILAC, align=PP_ALIGN.CENTER)
-anim(s, [g_code], range(g_tree, g_ref), range(g_ref, g_other), [g_other], [g_cap])
-notes(s, "Дерево – то, что видит и парсер: синтаксис. Ссылка – то, чего нет у текста: узел lint знает, к какому объявлению относится, и выбор зависит от типа receiver и импортов. "
-         "Одинаковый текст subject.lint(code) в detekt-formatting разрешается в FormattingRule.lint. Индексы – почему обход всех ссылок на объявление быстрый.")
+dashed_arrow(s, nx + 0.06, ny, 6.95, 3.85)
+textbox(s, 4.3, 3.35, 2.3, 0.4, "ссылка на объявление", size=10, color=GREEN, align=PP_ALIGN.CENTER)
+anim(s, [0], [1, 2], [3, 4, 5])
+notes(s, "Скриншот PSI Viewer IntelliJ на BracesOnIfStatementsSpec.kt:2213. Дерево – синтаксис, его видит и парсер. Ссылка – то, чего в тексте нет: узел lint знает, к какому объявлению относится; "
+         "выбор зависит от типа receiver и импортов. В настоящем дереве у этой строки 15 узлов; индексы хранят, где какое имя встречается, – обход ссылок быстрый.")
 
 # ---- Полнота ----
 s = slide_blank("Подход 3: движок IDE", "Полнота")
 _i = lambda: len(s.shapes) - 3
+def codebox(x, y, w, text, col=WHITE):
+    return card(s, x, y, w, 0.5, line=col, size=11.5, font=MONO, margin=0.15, anchor=MSO_ANCHOR.MIDDLE,
+                text=[(text, {"color": col if col is not WHITE else WHITE, "bold": col is GREEN})])
 g_k = _i()
-textbox(s, 0.49, 1.15, 5.2, 0.3, "МОДУЛЬ KOTLIN", size=10.5, color=LILAC, bold=True)
-card(s, 0.49, 1.5, 2.3, 2.95, line=GREEN, size=11, font=MONO, gap=2, margin=0.12, anchor=MSO_ANCHOR.MIDDLE, text=[
-    ("RuleExtensions.kt", {"size": 9.5, "color": GREY, "font": FONT}), ("fun Rule.lint(", {"color": GREEN, "bold": True}),
-    ("    content)", {"color": GREEN, "bold": True}), ("объявление", {"size": 9.5, "color": GREY, "font": FONT})])
-krefs = [("UnusedParameterSpec.kt", "subject.lint(code)", 1.5),
-         ("BracesOnIfStatementsSpec.kt · без точки", "lint(\"fun f() …\")", 2.55),
-         ("ArgumentListWrappingSpec.kt", "import …test.lint", 3.6)]
-for f, t, y in krefs:
-    card(s, 3.4, y, 2.6, 0.85, line=WHITE, size=11, font=MONO, gap=1, margin=0.12, anchor=MSO_ANCHOR.MIDDLE,
-         text=[(f, {"size": 9.5, "color": GREY, "font": FONT}), (t, {})])
-    dashed_arrow(s, 3.35, y + 0.42, 2.85, y + 0.42)
+card(s, 0.49, 1.25, 5.9, 3.9, line=LILAC, width=1.0, size=11, margin=0.15, text=[("Kotlin", {"color": LILAC, "bold": True})])
+codebox(0.75, 1.75, 3.6, "fun Rule.lint(content: String)", GREEN)
+for y, t in [(2.65, "subject.lint(code)"), (3.35, "lint(\"fun f() { $code }\")"), (4.05, "import …test.lint")]:
+    codebox(3.0, y, 3.1, t)
+    dashed_arrow(s, 2.95, y + 0.25, 2.2, 2.3)
 g_j = _i()
-textbox(s, 6.55, 1.15, 3.0, 0.3, "МОДУЛЬ JAVA", size=10.5, color=LILAC, bold=True)
-card(s, 6.55, 1.5, 2.95, 0.85, line=WHITE, size=11, font=MONO, gap=1, margin=0.12, anchor=MSO_ANCHOR.MIDDLE, text=[
-    ("BracesOnIfStatementsSpec.kt", {"size": 9.5, "color": GREY, "font": FONT}), ("@Test fun `…`()", {})])
-card(s, 6.55, 3.6, 2.95, 0.85, line=GREEN, size=11, font=MONO, gap=1, margin=0.12, anchor=MSO_ANCHOR.MIDDLE, text=[
-    ("junit-jupiter-api.jar · Test.java", {"size": 9.5, "color": GREY, "font": FONT}), ("@interface Test", {"color": GREEN, "bold": True})])
-dashed_arrow(s, 8.0, 2.4, 8.0, 3.55)
-textbox(s, 8.1, 2.75, 1.4, 0.5, "из Kotlin в Java", size=9.5, color=GREEN)
-g_band = _i()
-card(s, 0.49, 4.65, 9.0, 0.5, line=PURPLE, size=11.5, margin=0.15, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER, text=[
-    ("Один PSI на проект: модули Kotlin, Java, XML, … – свои узлы и ссылки, в том числе между языками", {"bold": True})])
-anim(s, range(g_k, g_j), range(g_j, g_band), [g_band])
-notes(s, "Полнота – все ссылки на объявление, в том числе из другого языка: Kotlin-аннотация @Test указывает на Java-класс из jar. "
-         "Каждый языковой модуль (плагин) строит свои узлы и даёт свои ссылки, а движок обходит их все одинаково – это и есть «один PSI». "
-         "Ссылка – слой поверх дерева: плагин может добавить связь туда, где компилятор её не видит (XML-конфиг, строка в properties). Индексы – почему обход быстрый. "
-         "На некомпилирующемся коде – частично: неразрешённые ссылки помечаются отдельно.")
+card(s, 6.6, 1.25, 2.9, 1.75, line=LILAC, width=1.0, size=11, margin=0.15, text=[("Java", {"color": LILAC, "bold": True})])
+codebox(6.75, 1.75, 2.6, "RuleExtensionsKt.lint(r, c);")
+dashed_arrow(s, 6.7, 2.0, 4.4, 2.0)
+g_x = _i()
+card(s, 6.6, 3.2, 2.9, 1.95, line=LILAC, width=1.0, size=11, margin=0.15, text=[("XML", {"color": LILAC, "bold": True})])
+codebox(6.75, 3.7, 2.6, "<bean class=\"…Rule\"/>")
+dashed_arrow(s, 6.7, 3.95, 4.1, 2.3)
+anim(s, range(g_k, g_j), range(g_j, g_x), list(range(g_x, _i())))
+notes(s, "Объявление – одно, ссылки на него – из разных файлов и разных языков: модули Kotlin, Java, XML дают свои узлы и свои ссылки, движок обходит их одинаково. "
+         "Пример Java и XML – иллюстрация возможности: в detekt функцию из Java не вызывают. Ссылка – слой поверх дерева: плагин может добавить связь туда, где компилятор её не видит. "
+         "Индексы – почему обход быстрый. На некомпилирующемся коде – частично: неразрешённые ссылки помечаются отдельно.")
 
 # ---- Корректность ----
 s = slide_blank("Подход 3: движок IDE", "Корректность")
-card(s, 0.72, 1.3, 8.56, 0.6, line=PURPLE, text="Правка примеряется на копии в памяти: конфликты видны до того, как тронут файл",
+card(s, 0.72, 1.39, 8.56, 0.6, line=PURPLE, text="Правка примеряется на копии в памяти: конфликты видны до того, как тронут файл",
      size=13.5, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.1)
 steps = [("Копия вызова", "в памяти, файл не меняется"), ("Новое имя", "на копии"),
          ("Разрешение", "заново: какой метод?"), ("Другой метод", "→ конфликт")]
 for i, (t, sub) in enumerate(steps):
-    card(s, X4N[i], 2.1, 1.67, 0.8, line=WHITE, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.05,
+    card(s, X4N[i], 2.29, 1.67, 0.8, line=WHITE, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.05,
          text=[(t, {"size": 12, "bold": True}), (sub, {"size": 10.5, "color": GREY})])
     if i < 3:
-        arrow(s, X4N[i] + 1.8, 2.43)
-card(s, 0.72, 3.1, 3.7, 1.7, line=WHITE, size=11.5, gap=6, text=[
+        arrow(s, X4N[i] + 1.8, 2.62)
+card(s, 0.72, 3.39, 3.7, 1.7, line=WHITE, size=11.5, gap=6, text=[
     ("ДО RENAME", {"size": 10.5, "color": GREY, "bold": True}),
     ("rule.compileAndLint(code)", {"font": MONO, "size": 12}),
     ("rule.lint(code)  – другая функция, без компиляции", {"font": MONO, "size": 12, "color": GREEN}),
 ])
-card(s, 5.58, 3.1, 3.7, 1.7, line=WHITE, size=11.5, gap=6, text=[
+card(s, 5.58, 3.39, 3.7, 1.7, line=WHITE, size=11.5, gap=6, text=[
     ("ПОСЛЕ RENAME", {"size": 10.5, "color": GREY, "bold": True}),
     ("rule.lint(code)", {"font": MONO, "size": 12}),
     ("rule.lint(code)  – неразличимы; 78 вызовов меняют смысл", {"font": MONO, "size": 12, "color": RED}),
 ])
-arrow(s, 4.7, 3.85, w=0.6, h=0.16)
-textbox(s, 0.72, 4.85, 8.56, 0.45, "Конфликт показан до применения. Применение – одна операция: либо всё, либо ничего",
-        size=11.5, color=LILAC, bold=True, align=PP_ALIGN.CENTER)
-anim(s, [0], range(1, 8), [8, 9, 10], [11])
+arrow(s, 4.7, 4.14, w=0.6, h=0.16)
+anim(s, [0], range(1, 8), [8, 9, 10])
 notes(s, "Механизм для метода: копия выражения-вызова, новое имя, повторный резолв. На кейсе – конфликт объявления.")
 
 # ---- Таблица ----
@@ -1106,7 +1084,7 @@ notes(s, "Не читать вслух. У текста нет символа; �
 s = slide_blank(CH_APPR, "Bias агентов")
 source_line(s, 0.49, 1.15, 9.0, "Codex CLI – системный промпт")
 picture(s, "img/codex-prompt.png", 0.49, 1.45, w=7.6)                # 1800×464 → 7.6×1.96
-source_line(s, 0.49, 3.55, 9.0, "Claude Code – системный промпт в режиме bypass / auto, август 2026")
+source_line(s, 0.49, 3.55, 9.0, "Claude Code – системный промпт")
 picture(s, "img/claude-code-bypass-issue.png", 0.49, 3.85, w=7.6)    # 1640×329 → 7.6×1.52
 notes(s, "Это инструкция агента, а не выбор модели: та же модель в другом агенте инструменты вызывает. Единственный инструмент правки у терминальных агентов – замена строки или патч. "
          "Источники: github.com/openai/codex, codex-rs/core/gpt_5_codex_prompt.md (тот же текст в промптах для gpt-5.2); блок bypass/auto – по issue anthropics/claude-code #88475 (версии 2.1.228+). "
@@ -1149,8 +1127,8 @@ notes(s, "Оговорки – только здесь: пилот, 2–3 про
 slide_plan(done={CH_INTRO, CH_APPR}, current="MCP-серверы для рефакторинга")
 
 # ---- MCP ----
-s = slide_blank("Готовые решения", "MCP для рефакторинга")
-textbox(s, 0.49, 1.3, 9.0, 0.6,
+s = slide_blank("Готовые решения", "MCP-серверы для рефакторинга")
+textbox(s, 0.49, 1.38, 9.0, 0.26,
         "MCP (Model Context Protocol) – протокол общения LLM с инструментами. "
         "MCP-сервер – сервер, отвечающий на запросы LLM по MCP",
         size=12, color=GREY)
