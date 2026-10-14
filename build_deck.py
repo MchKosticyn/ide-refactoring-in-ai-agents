@@ -513,7 +513,7 @@ X4N = [0.72, 3.01, 5.33, 7.61]      # четыре узкие карточки �
 
 COMPARE_COLS = ["Человек с IDE", "Агент + текстовый подход", "Агент + LSP", "Агент + инструменты IDE"]
 COMPARE_ROWS = [
-    ("Полнота", ["✓", "✗ 2 из 78", "✓", "TODO"]),
+    ("Полнота", ["✓", "✗ 2 пропущены", "✓", "TODO"]),
     ("Корректность", ["✓", "✗ двойник, комментарий", "TODO", "TODO"]),
     ("Время", ["≈ 30 мин", "13,7 мин", "TODO", "TODO"]),
     ("Стоимость", ["≈ $30", "$4.41", "TODO", "TODO"]),
@@ -697,13 +697,13 @@ s = slide_title(["Использование инструментов", "реф�
 s = slide_blank(TALK_SHORT, "О нас")
 people = [("Михаил Костицын", "Спикер", ["Ведущий разработчик Veai – ИИ-агента для разработчиков",
                                         "Статический анализ и формальная верификация; ИИ-агенты с 2023 года"]),
-          ("Максим Паршин", "Эксперт доклада", ["TODO", "TODO"])]
+          ("Максим Паршин", "Эксперт", ["TODO", "TODO"])]
 for i, (name, role, lines) in enumerate(people):
     x = 0.49 + i * 4.6
     card(s, x, 1.45, 4.4, 3.55, line=PURPLE if i == 0 else WHITE)
     card(s, x + 0.25, 1.7, 1.5, 1.5, line=AMBER, size=10, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER, margin=0.05,
          text=[("TODO: фото", {"color": AMBER, "bold": True})])
-    textbox(s, x + 1.95, 1.75, 2.3, 0.9, [(name, {"size": 16, "bold": True}), (role, {"size": 12, "color": LILAC})], size=16)
+    textbox(s, x + 1.95, 1.75, 2.3, 0.53, [(name, {"size": 16, "bold": True}), (role, {"size": 12, "color": LILAC})], size=16)
     textbox(s, x + 0.25, 3.4, 3.9, 1.5, [(ln, {"color": todo_color(ln, WHITE)}) for ln in lines], size=12.5, color=WHITE, space_after=6)
 
 # ---- план ----
@@ -711,14 +711,14 @@ slide_plan(current=CH_INTRO)
 
 # ---- Рамка ----
 s = slide_blank(CH_INTRO, "Определение")
-card(s, 0.72, 1.71, 8.56, 0.81, line=PURPLE, text="Рефакторинг – это изменение структуры кода без изменения поведения программы",
+card(s, 0.72, 1.77, 8.56, 0.81, line=PURPLE, text="Рефакторинг – это изменение структуры кода без изменения поведения",
      size=15, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-card(s, 0.72, 2.82, 4.1, 1.39, line=WHITE, size=12.5, gap=8, text=[
+card(s, 0.72, 2.88, 4.1, 1.39, line=WHITE, size=12.5, gap=8, text=[
     ("Задача 1: найти все места", {"size": 15, "bold": True, "space_after": 10}),
     "Нужна полнота: 97 % не годится",
     ("78 вызовов × 97 % = 2 пропуска", {"color": LILAC, "bold": True}),
 ])
-card(s, 5.18, 2.82, 4.1, 1.39, line=WHITE, size=12.5, gap=8, text=[
+card(s, 5.18, 2.88, 4.1, 1.39, line=WHITE, size=12.5, gap=8, text=[
     ("Задача 2: применить", {"size": 15, "bold": True, "space_after": 10}),
     "Нужна корректность: правка не меняет поведение программы",
 ])
@@ -739,7 +739,7 @@ anim(s, [0], [1])
 
 # ---- Кейс ----
 s = slide_blank(CH_INTRO, "Кейс: detekt")
-textbox(s, 0.49, 1.29, 9.0, 0.27, "detekt – статический анализатор Kotlin", size=12.5, color=GREY)
+textbox(s, 0.49, 1.31, 9.0, 0.27, "detekt – статический анализатор Kotlin", size=12.5, color=GREY)
 card(s, 0.49, 1.95, 9.0, 1.15, line=WHITE, size=11.5, font=MONO, gap=1, margin=0.15, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("fun Rule.compileAndLint(code)", {"color": LILAC, "bold": True}),
     ("    сначала компилирует сниппет компилятором Kotlin (только в CI), потом прогоняет правило", {"color": GREY, "font": FONT}),
@@ -779,9 +779,9 @@ for name, gif, sub in ide_tools:
     notes(s, sub + ". Запись IntelliJ IDEA на detekt (2026-10-14), gif зациклен. Говорим коротко: что нажали и что IDE сделала сама.")
 
 # ---- Человек в IDE: разбор ----
-s = slide_blank(CH_INTRO, "Подход 0: человек с IDE")
+s = slide_blank(CH_INTRO, "Человек с IDE: результаты")
 result_table(s, [
-    (True, "78 из 78"),
+    (True, "все 1506 вызовов"),
     (True, "поведение не изменилось"),
 ], metrics=[("Время", "≈ 30 мин"), ("Стоимость", "≈ $30")])
 textbox(s, 0.49, 5.1, 9.0, 0.35, "Можно ли быстрее?", size=14, color=LILAC, bold=True, align=PP_ALIGN.CENTER)
@@ -853,7 +853,7 @@ s = slide_demo(CH_APPR, "Подход 1: текстовый",
 # ---- Разбор демо 1 ----
 s = slide_blank(CH_APPR, "Подход 1: текстовый")
 result_table(s, [
-    (False, "2 из 78 пропущены"),
+    (False, "2 из 1506 пропущены"),
     (False, "двойник и комментарий; сборка зелёная"),
 ], metrics=[("Время", "13,7 мин"), ("Стоимость", "$4.41"), ("Ходы", "53"), ("Токены", "3,9M"), ("Контекст", "TODO")])
 anim(s, [0, 1], [2, 3], range(4, 9))
@@ -875,13 +875,13 @@ s = slide_blank("Подход 1: текстовый", "Где ломается")
 textbox(s, 0.49, 1.22, 9.0, 0.26, "Одна строка, но две разные функции", size=12, color=GREY)
 card(s, 0.49, 1.7, 9.0, 1.6, line=WHITE, size=12.5, font=MONO, gap=2, margin=0.25, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("detekt-rules-style/…/UnusedParameterSpec.kt", {"color": GREY, "size": 10.5}),
-    ("    subject.lint(code)   // Rule.lint – та, что меняем", {"color": WHITE, "space_after": 6}),
+    ("    subject.lint(code)   // Rule.lint – наша функция", {"color": WHITE, "space_after": 6}),
     ("detekt-formatting/…/IndentationSpec.kt", {"color": GREY, "size": 10.5}),
     ("    subject.lint(code)   // FormattingRule.lint – другая функция", {"color": RED}),
 ])
 card(s, 0.49, 3.5, 4.4, 1.6, line=RED, size=12.5, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("Полнота", {"bold": True, "space_after": 4}),
-    "Поиск по подстроке: пропускает одни места и захватывает чужие",
+    "Поиск по подстроке: пропускает нужные места и захватывает лишние",
 ])
 card(s, 5.1, 3.5, 4.4, 1.6, line=RED, size=12.5, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("Корректность", {"bold": True, "space_after": 4}),
@@ -902,9 +902,9 @@ slide_subplan(current="LSP-серверы", done={"Текстовый подхо
 
 # ---- LSP: что это ----
 s = slide_blank(CH_APPR, "Подход 2: LSP")
-textbox(s, 0.49, 1.25, 9.0, 0.9, [
+textbox(s, 0.49, 1.25, 9.0, 0.69, [
         "LSP (Language Server Protocol) – протокол между редактором или агентом и сервером языка",
-        "Сервер – отдельный процесс, который разбирает код и знает, какой текст к какому символу относится",
+        "Сервер – отдельный процесс, который разбирает код и знает, что к какому символу относится",
         "Один сервер на язык",
         ], size=12.5, color=GREY)
 labels = [("Клиент", "редактор или агент"), ("Запрос", "«переименуй символ здесь»"),
@@ -965,9 +965,9 @@ slide_subplan(current="Инструменты IDE", done={"Текстовый п
 s = slide_blank(CH_APPR, "Подход 3: движок рефакторинга IDE (IntelliJ)")
 card(s, 0.49, 1.25, 9.0, 0.55, line=PURPLE, text="Инструменты IDE позволяют разделить: модель решает «что», движок – «как»",
      size=14, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.1)
-textbox(s, 0.49, 2.0, 9.0, 0.5,
-        "Код представлен не текстом, а графом символов: символ – узел, ссылка – ребро к объявлению. «Все использования» – обход ссылок",
-        size=12, color=GREY)
+textbox(s, 0.49, 2.0, 9.0, 0.46, [
+        "Код представлен не текстом, а графом символов: символ – узел, ссылка – ребро к объявлению",
+        "«Все использования» – обход ссылок"], size=12, color=GREY)
 card(s, 0.49, 2.77, 4.4, 1.63, line=RED, size=11, font=MONO, gap=1, text=[
     ("КАК ВИДИТ GREP", {"size": 10.5, "color": RED, "bold": True, "font": FONT, "space_after": 6}),
     ("grep '\\.lint('  → 180 строк:", {"color": LILAC}),
@@ -984,9 +984,9 @@ card(s, 5.1, 2.77, 4.4, 1.63, line=GREEN, size=11, font=MONO, gap=1, text=[
     ("FormattingRule.lint  другой символ", {"color": GREY}),
     ("Rule.compileAndLint  1428 ссылок", {"color": GREEN}),
 ])
-textbox(s, 0.49, 4.66, 9.0, 0.4,
-        "PSI (Program Structure Interface) – модель кода: дерево + ссылки между узлами. IDE держит её в памяти и синхронизирует с редактором",
-        size=11.5, color=LILAC, align=PP_ALIGN.CENTER)
+textbox(s, 0.49, 4.66, 9.0, 0.45, [
+        "PSI (Program Structure Interface) – модель кода: дерево + ссылки между узлами",
+        "IDE держит её в памяти и синхронизирует с редактором"], size=11.5, color=LILAC, align=PP_ALIGN.CENTER)
 anim(s, [0, 1], [2], [3, 4])
 notes(s, "Агент решает, что переименовать и как поступить с конфликтом; движок ищет ссылки, проверяет конфликт, применяет. Рассматриваем только IntelliJ.")
 
@@ -1079,15 +1079,15 @@ codebox(0.65, 1.7, 5.5, "fun Rule.lint(content: String)", GREEN)          # об
 usages = [(0.65, 1.85, "subject.lint(code)"), (2.65, 1.75, "lint(\"fun f() {}\")"), (4.55, 1.6, "import test.lint")]
 for x, w, t in usages:
     codebox(x, 3.6, w, t, size=10)
-    elbow_arrow(s, [(x + w / 2, 3.6), (x + w / 2, 2.2)])
+    elbow_arrow(s, [(x + w / 2, 3.55), (x + w / 2, 2.2)])
 g_j = _i()
 frame(6.7, 1.25, 2.8, 1.5, "Java")
 codebox(6.85, 1.7, 2.5, "lint(rule, code)")
-elbow_arrow(s, [(6.85, 1.9), (6.15, 1.9)])
+elbow_arrow(s, [(6.8, 1.9), (6.15, 1.9)])
 g_x = _i()
 frame(6.7, 3.0, 2.8, 1.7, "XML")
 codebox(6.85, 3.6, 2.5, "<bean class=\"MyRule\"/>")
-elbow_arrow(s, [(6.85, 3.85), (6.5, 3.85), (6.5, 2.1), (6.15, 2.1)], r=0.14)
+elbow_arrow(s, [(6.8, 3.85), (6.5, 3.85), (6.5, 2.1), (6.15, 2.1)], r=0.14)
 anim(s, range(g_k, g_j), range(g_j, g_x), list(range(g_x, _i())))
 notes(s, "Объявление одно, ссылки на него – из разных файлов и разных языков: модули Kotlin, Java, XML дают свои узлы и свои ссылки, движок обходит их одинаково. "
          "Java и XML – иллюстрация возможности (в detekt функцию из Java не вызывают; Java-вызов показан со static import). Ссылка – слой поверх дерева: плагин может добавить связь туда, где компилятор её не видит. "
@@ -1143,7 +1143,7 @@ notes(s, "Не промпт, а продуктовое решение: Cursor у
 
 # ---- Bias агентов (c): Serena ----
 s = slide_blank(CH_APPR, "Bias агентов")
-textbox(s, 0.49, 1.15, 9.0, 0.25, "Документация Serena – MCP-сервера с инструментами LSP для агентов, пост опубликован в октября 2026", size=11, color=GREY)
+textbox(s, 0.49, 1.15, 9.0, 0.25, "Документация Serena – MCP-сервера с инструментами LSP для агентов, октябрь 2026", size=11, color=GREY)
 picture(s, "img/serena-docs-attention.png", 0.49, 1.52, h=3.75)      # 1640×1082 → 5.68×3.75
 card(s, 6.4, 1.52, 3.1, 3.75, line=WHITE, size=12, gap=10, anchor=MSO_ANCHOR.MIDDLE, text=[
     "«Описания встроенных инструментов Claude Code – почти 16k токенов; пользователь их не меняет»",
@@ -1172,9 +1172,9 @@ slide_plan(done={CH_INTRO, CH_APPR}, current="MCP-серверы для рефа
 
 # ---- MCP ----
 s = slide_blank("Готовые решения", "MCP-серверы для рефакторинга")
-textbox(s, 0.49, 1.38, 9.0, 0.26,
-        "MCP (Model Context Protocol) – протокол общения LLM с инструментами. "
-        "MCP-сервер – сервер, отвечающий на запросы LLM по MCP",
+textbox(s, 0.49, 1.26, 9.0, 0.46, [
+        "MCP (Model Context Protocol) – протокол общения LLM с инструментами",
+        "MCP-сервер – сервер, отвечающий на запросы LLM по MCP"],
         size=12, color=GREY)
 card(s, 0.49, 2.0, 4.4, 3.1, line=WHITE, size=11.5, gap=4, text=[
     ("ВСТРОЕННЫЙ MCP-СЕРВЕР INTELLIJ IDEA", {"size": 10.5, "color": LILAC, "bold": True, "space_after": 8}),
