@@ -722,18 +722,15 @@ notes(s, "Два коммита за 20 минут, PR открыт через 8
          "134 файла, +1693 −1726.")
 
 # ---- Инструменты рефакторинга IDE: gif ----
-s = slide_blank(CH_INTRO, "Инструменты рефакторинга IDE")
-tools = [("Rename", "⇧F6 – переименовать символ и все его использования"),
-         ("Change Signature", "⌘F6 – добавить параметр, подставить значение в вызовы"),
-         ("Safe Delete", "⌘⌫ – удалить, если использований нет; иначе показать их")]
-for i, (t, sub) in enumerate(tools):
-    x = X3[i]
-    card(s, x, 1.25, 2.85, 2.4, line=AMBER, size=11, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER,
-         text=[("TODO: gif", {"color": AMBER, "bold": True})])
-    card(s, x, 3.8, 2.85, 1.3, line=WHITE, size=11, gap=3, margin=0.15, anchor=MSO_ANCHOR.MIDDLE,
-         text=[(t, {"size": 14, "bold": True, "space_after": 3}), (sub, {"color": GREY})])
-anim(s, [0, 1], [2, 3], [4, 5])
-notes(s, "Три инструмента, которые понадобятся в кейсе. Официальные gif JetBrains (блог 2020, светлая тема, Java) есть только для Rename и Change Signature – лучше записать свои на detekt в тёмной теме.")
+ide_tools = [("Find Usages", "img/ide-find-usages.gif", "⌥F7 – все использования compileAndLint: 1428 вызовов и 130 импортов"),
+             ("Rename", "img/ide-rename.gif", "⇧F6 – compileAndLint → lint: конфликт «функция lint уже объявлена» – до применения"),
+             ("Change Signature", "img/ide-change-signature.gif", "⌘F6 – параметр compile: Boolean = false в старом lint: 76 вызовов обновлены"),
+             ("Safe Delete", "img/ide-safe-delete.gif", "⌘⌫ – удалить compileAndLint: 1428 использований, удаление заблокировано")]
+for name, gif, sub in ide_tools:
+    s = slide_blank(CH_INTRO, f"Инструменты рефакторинга IDE: {name}")
+    picture(s, gif, 1.2, 1.15, w=7.6)                                  # 1200×647 → 7.6×4.1
+    textbox(s, 0.49, 5.0, 9.0, 0.35, sub, size=11, color=GREY, align=PP_ALIGN.CENTER)
+    notes(s, "Запись IntelliJ IDEA на detekt (2026-10-14), gif зациклен. Говорим коротко: что нажали и что IDE сделала сама.")
 
 # ---- Человек в IDE: разбор ----
 s = slide_blank(CH_INTRO, "Подход 0: человек с IDE")
