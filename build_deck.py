@@ -478,8 +478,8 @@ def slide_subplan(current=None, done=()):
         card(s, x, 1.9, w, 1.5, line=col, width=2.25 if title == current else 1.5, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER,
              text=[(str(i + 1), {"size": 26, "bold": True, "color": col}), (title, {"size": 15, "bold": title == current, "color": WHITE if title == current else col})])
         if i < 2 and (APPROACHES[i + 1] == current or APPROACHES[i + 1] in done):
-            nx = geo[i + 1][0]
-            arrow(s, x + w + 0.12, 2.5, w=nx - (x + w) - 0.24, h=0.3, color=GREY)
+            gap_c = (x + w + geo[i + 1][0]) / 2
+            arrow(s, gap_c - 0.2, 2.5, w=0.4, h=0.3, color=GREY)
     return s
 
 
@@ -782,7 +782,7 @@ for name, gif, sub in ide_tools:
 s = slide_blank(CH_INTRO, "Подход 0: человек с IDE")
 result_table(s, [
     (True, "78 из 78"),
-    (True, "конфликт до правки"),
+    (True, "поведение не изменилось"),
 ], metrics=[("Время", "≈ 30 мин"), ("Стоимость", "≈ $30")])
 textbox(s, 0.49, 5.1, 9.0, 0.35, "Можно ли быстрее?", size=14, color=LILAC, bold=True, align=PP_ALIGN.CENTER)
 anim(s, [0, 1], [2, 3], [4, 5], [6])
@@ -834,7 +834,7 @@ for i, (t, sub) in enumerate(labels):
 card(s, 0.49, 3.67, 9.0, 1.37, line=PURPLE, size=12, gap=4, text=[
     ("МЕХАНИЗМЫ ПРАВКИ", {"size": 10.5, "color": LILAC, "bold": True, "space_after": 8}),
     ("•", "Скрипт / regex по файлам – заменяет подстроку везде, где нашёл"),
-    ("•", "Инструмент «правка фрагмента» – удалить / добавить / заменить; каждое место – отдельный вызов"),
+    ("•", "Инструмент «Edit_File» – удалить / добавить / заменить; каждое место – отдельный вызов"),
     ("•", "Перезапись файла целиком – модель генерирует новый файл"),
 ])
 anim(s, range(0, 10), [10])
@@ -1056,7 +1056,7 @@ def outline(x1, y1, x2, y2, col=GREEN):
     return r
 outline(585, 1398, 1105, 1462)                   # узел REFERENCE_EXPRESSION
 nx, ny = px(1105, 1430)
-card(s, 6.92, 2.74, 2.75, 1.0, line=GREEN, size=10.5, font=MONO, gap=1, margin=0.12, anchor=MSO_ANCHOR.MIDDLE, text=[
+card(s, 6.92, 2.88, 2.75, 0.72, line=GREEN, size=10.5, font=MONO, gap=1, margin=0.12, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("RuleExtensions.kt", {"size": 9.5, "color": GREY, "font": FONT}),
     ("fun Rule.lint(content, …)", {"color": GREEN, "bold": True}),
 ])
@@ -1079,15 +1079,15 @@ codebox(0.65, 1.7, 5.5, "fun Rule.lint(content: String)", GREEN)          # об
 usages = [(0.65, 1.85, "subject.lint(code)"), (2.65, 1.75, "lint(\"fun f() {}\")"), (4.55, 1.6, "import test.lint")]
 for x, w, t in usages:
     codebox(x, 3.6, w, t, size=10)
-    elbow_arrow(s, [(x + w / 2, 3.55), (x + w / 2, 2.25)])
+    elbow_arrow(s, [(x + w / 2, 3.6), (x + w / 2, 2.2)])
 g_j = _i()
 frame(6.7, 1.25, 2.8, 1.5, "Java")
 codebox(6.85, 1.7, 2.5, "lint(rule, code)")
-elbow_arrow(s, [(6.8, 1.95), (6.2, 1.95)])
+elbow_arrow(s, [(6.85, 1.9), (6.15, 1.9)])
 g_x = _i()
 frame(6.7, 3.0, 2.8, 1.7, "XML")
 codebox(6.85, 3.6, 2.5, "<bean class=\"MyRule\"/>")
-elbow_arrow(s, [(6.8, 3.85), (6.5, 3.85), (6.5, 1.95), (6.2, 1.95)])
+elbow_arrow(s, [(6.85, 3.85), (6.5, 3.85), (6.5, 2.1), (6.15, 2.1)], r=0.14)
 anim(s, range(g_k, g_j), range(g_j, g_x), list(range(g_x, _i())))
 notes(s, "Объявление одно, ссылки на него – из разных файлов и разных языков: модули Kotlin, Java, XML дают свои узлы и свои ссылки, движок обходит их одинаково. "
          "Java и XML – иллюстрация возможности (в detekt функцию из Java не вызывают; Java-вызов показан со static import). Ссылка – слой поверх дерева: плагин может добавить связь туда, где компилятор её не видит. "
