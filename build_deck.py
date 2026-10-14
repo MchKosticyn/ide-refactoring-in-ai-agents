@@ -728,7 +728,7 @@ ide_tools = [("Find Usages", "img/ide-find-usages.gif", "⌥F7 – все исп
              ("Safe Delete", "img/ide-safe-delete.gif", "⌘⌫ – удалить compileAndLint: 1428 использований, удаление заблокировано")]
 for name, gif, sub in ide_tools:
     s = slide_blank(CH_INTRO, f"Инструменты рефакторинга IDE: {name}")
-    picture(s, gif, 1.2, 1.15, w=7.6)                                  # 1200×647 → 7.6×4.1
+    picture(s, gif, 1.5, 1.15, w=7.0)                                  # 1200×647 → 7.0×3.77
     textbox(s, 0.49, 5.0, 9.0, 0.35, sub, size=11, color=GREY, align=PP_ALIGN.CENTER)
     notes(s, "Запись IntelliJ IDEA на detekt (2026-10-14), gif зациклен. Говорим коротко: что нажали и что IDE сделала сама.")
 
