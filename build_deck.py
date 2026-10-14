@@ -1014,11 +1014,11 @@ def outline(x1, y1, x2, y2, col=GREEN):
 outline(815, 492, 930, 557)                      # токен lint в коде
 outline(585, 1398, 1105, 1462)                   # узел REFERENCE_EXPRESSION
 nx, ny = px(1105, 1430)
-card(s, 7.0, 3.35, 2.5, 1.0, line=GREEN, size=11, font=MONO, gap=1, margin=0.15, anchor=MSO_ANCHOR.MIDDLE, text=[
+card(s, 6.75, 3.35, 2.75, 1.0, line=GREEN, size=10.5, font=MONO, gap=1, margin=0.12, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("RuleExtensions.kt", {"size": 9.5, "color": GREY, "font": FONT}),
     ("fun Rule.lint(content, …)", {"color": GREEN, "bold": True}),
 ])
-dashed_arrow(s, nx + 0.06, ny, 6.95, 3.85)
+dashed_arrow(s, nx + 0.06, ny, 6.7, 3.85)
 textbox(s, 4.3, 3.35, 2.3, 0.4, "ссылка на объявление", size=10, color=GREEN, align=PP_ALIGN.CENTER)
 anim(s, [0], [1, 2], [3, 4, 5])
 notes(s, "Скриншот PSI Viewer IntelliJ на BracesOnIfStatementsSpec.kt:2213. Дерево – синтаксис, его видит и парсер. Ссылка – то, чего в тексте нет: узел lint знает, к какому объявлению относится; "
@@ -1027,8 +1027,8 @@ notes(s, "Скриншот PSI Viewer IntelliJ на BracesOnIfStatementsSpec.kt:
 # ---- Полнота ----
 s = slide_blank("Подход 3: движок IDE", "Полнота")
 _i = lambda: len(s.shapes) - 3
-def codebox(x, y, w, text, col=WHITE):
-    return card(s, x, y, w, 0.5, line=col, size=11.5, font=MONO, margin=0.15, anchor=MSO_ANCHOR.MIDDLE,
+def codebox(x, y, w, text, col=WHITE, size=11.5):
+    return card(s, x, y, w, 0.5, line=col, size=size, font=MONO, margin=0.12, anchor=MSO_ANCHOR.MIDDLE,
                 text=[(text, {"color": col if col is not WHITE else WHITE, "bold": col is GREEN})])
 g_k = _i()
 card(s, 0.49, 1.25, 5.9, 3.9, line=LILAC, width=1.0, size=11, margin=0.15, text=[("Kotlin", {"color": LILAC, "bold": True})])
@@ -1038,7 +1038,7 @@ for y, t in [(2.65, "subject.lint(code)"), (3.35, "lint(\"fun f() { $code }\")")
     dashed_arrow(s, 2.95, y + 0.25, 2.2, 2.3)
 g_j = _i()
 card(s, 6.6, 1.25, 2.9, 1.75, line=LILAC, width=1.0, size=11, margin=0.15, text=[("Java", {"color": LILAC, "bold": True})])
-codebox(6.75, 1.75, 2.6, "RuleExtensionsKt.lint(r, c);")
+codebox(6.75, 1.75, 2.6, "RuleExtensionsKt.lint(r, c)", size=10)
 dashed_arrow(s, 6.7, 2.0, 4.4, 2.0)
 g_x = _i()
 card(s, 6.6, 3.2, 2.9, 1.95, line=LILAC, width=1.0, size=11, margin=0.15, text=[("XML", {"color": LILAC, "bold": True})])
