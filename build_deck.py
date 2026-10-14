@@ -424,13 +424,11 @@ def result_table(s, statuses, metrics=None, banner=None):
         bottom_banner(s, banner, y=4.75, size=13)
 
 
-def slide_pros_cons(kicker, pros, cons, note=None):
+def slide_pros_cons(kicker, pros, cons, note=None, y=1.4, h=3.7):
     s = slide_blank(kicker, "Плюсы и минусы")
-    long = max(len(p) for p in pros + cons) > 80 or len(pros) + len(cons) > 6
-    size, gap = (12, 7) if long else (13.5, 9)
-    card(s, 0.49, 1.4, 4.4, 3.7, line=GREEN, size=size, gap=gap,
+    card(s, 0.49, y, 4.4, h, line=GREEN, size=12, gap=7,
          text=[("Плюсы", {"size": 17, "bold": True, "space_after": 12})] + [("•", p) for p in pros])
-    card(s, 5.1, 1.4, 4.4, 3.7, line=RED, size=size, gap=gap,
+    card(s, 5.1, y, 4.4, h, line=RED, size=12, gap=7,
          text=[("Минусы", {"size": 17, "bold": True, "space_after": 12})] + [("•", c) for c in cons])
     anim(s, [0], [1])
     if note:
@@ -739,18 +737,21 @@ anim(s, [0], [1])
 
 # ---- Кейс ----
 s = slide_blank(CH_INTRO, "Кейс: detekt")
-textbox(s, 0.49, 1.31, 9.0, 0.27, "detekt – статический анализатор Kotlin", size=12.5, color=GREY)
+textbox(s, 0.49, 1.31, 9.0, 0.48, [
+    "detekt – статический анализатор Kotlin: набор правил, каждое ищет в коде свой вид проблем",
+    "Правила тестируют на сниппетах – коротких фрагментах Kotlin-кода прямо в тесте"], size=12.5, color=GREY)
 card(s, 0.49, 1.95, 9.0, 1.15, line=WHITE, size=11.5, font=MONO, gap=1, margin=0.15, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("fun Rule.compileAndLint(code)", {"color": LILAC, "bold": True}),
-    ("    сначала компилирует сниппет компилятором Kotlin (только в CI), потом прогоняет правило", {"color": GREY, "font": FONT}),
+    ("    сначала компилирует сниппет компилятором Kotlin, потом прогоняет правило", {"color": GREY, "font": FONT}),
     ("fun Rule.lint(code)", {"color": LILAC, "bold": True}),
     ("    сразу прогоняет правило: сниппет может быть неполным и не компилироваться", {"color": GREY, "font": FONT}),
 ])
-card(s, 0.49, 3.5, 9.0, 1.57, line=PURPLE, size=12, gap=3, text=[
+card(s, 0.49, 3.5, 9.0, 1.77, line=PURPLE, size=12, gap=3, text=[
     ("ЗАДАЧА: PR #7873", {"size": 10.5, "color": LILAC, "bold": True, "space_after": 6}),
     ("Оставить одну функцию: lint(code, compile = true)", {"bold": True}),
     "compileAndLint(code) → lint(code) – 1428 вызовов",
     "старый lint(code) → lint(code, compile = false) – 78 вызовов, чтобы тесты работали как раньше",
+    ("Суммарно нужно изменить: 1506 вызовов", {"bold": True}),
     ("Не трогать: перегрузку lint(ktFile) – 36 вызовов, FormattingRule.lint – 66 вызовов", {"color": GREY}),
 ])
 anim(s, [0, 1], [2])
@@ -774,8 +775,8 @@ for name, gif, sub in ide_tools:
     s = slide_blank(CH_INTRO, f"Инструменты рефакторинга IDE: {name}")
     from PIL import Image as _Img
     _w, _h = _Img.open(gif).size
-    gw = min(8.2, 4.35 * _w / _h)                                      # вписать в 8.2×4.35 под заголовком
-    picture(s, gif, (10 - gw) / 2, 1.15, w=gw)
+    gw = min(7.2, 4.11 * _w / _h)                                      # раскладка Михаила: 7.2×4.11, y 1.3
+    picture(s, gif, (10 - gw) / 2, 1.3, w=gw)
     notes(s, sub + ". Запись IntelliJ IDEA на detekt (2026-10-14), gif зациклен. Говорим коротко: что нажали и что IDE сделала сама.")
 
 # ---- Человек в IDE: разбор ----
@@ -823,17 +824,17 @@ s = slide_blank(CH_APPR, "Подход 1: текстовый")
 textbox(s, 0.49, 1.38, 9.0, 0.28,
         "Агент работает с кодом как с текстом: строки и подстроки, а не функции и вызовы",
         size=13, color=GREY)
-labels = [("Задача", "текстом"), ("Поиск", "по тексту: grep, ripgrep"),
-          ("Чтение", "найденных файлов"), ("Правка", "текстом"), ("Результат", "diff")]
+labels = [("Задача", ""), ("Поиск", "grep, ripgrep"),
+          ("Чтение файлов", ""), ("Правка", ""), ("Результат", "diff")]
 xs5 = [0.49, 2.35, 4.21, 6.07, 7.93]
 for i, (t, sub) in enumerate(labels):
     card(s, xs5[i], 2.15, 1.58, 0.95, line=WHITE, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.05,
-         text=[(t, {"size": 13.5, "bold": True}), (sub, {"size": 10.5, "color": GREY})])
+         text=[(t, {"size": 13.5, "bold": True})] + ([(sub, {"size": 10.5, "color": GREY})] if sub else []))
     if i < 4:
         arrow(s, xs5[i] + 1.62, 2.55, w=0.2, h=0.12)
 card(s, 0.49, 3.67, 9.0, 1.37, line=PURPLE, size=12, gap=4, text=[
     ("МЕХАНИЗМЫ ПРАВКИ", {"size": 10.5, "color": LILAC, "bold": True, "space_after": 8}),
-    ("•", "Скрипт / regex по файлам – заменяет подстроку везде, где нашёл"),
+    ("•", "Скрипт / Regex по файлам – заменяет подстроку везде, где нашёл"),
     ("•", "Инструмент «Edit_File» – удалить / добавить / заменить; каждое место – отдельный вызов"),
     ("•", "Перезапись файла целиком – модель генерирует новый файл"),
 ])
@@ -853,8 +854,8 @@ s = slide_demo(CH_APPR, "Подход 1: текстовый",
 # ---- Разбор демо 1 ----
 s = slide_blank(CH_APPR, "Подход 1: текстовый")
 result_table(s, [
-    (False, "2 из 1506 пропущены"),
-    (False, "двойник и комментарий; сборка зелёная"),
+    (False, "2 из 1506 вызовов пропущены"),
+    (False, "двойник и комментарий, но сборка зелёная"),
 ], metrics=[("Время", "13,7 мин"), ("Стоимость", "$4.41"), ("Ходы", "53"), ("Токены", "3,9M"), ("Контекст", "TODO")])
 anim(s, [0, 1], [2, 3], range(4, 9))
 notes(s, "Агент правильно выбрал порядок: сначала старые lint, потом rename; двойник в другом модуле обошёл. Промах – там, где имя не выглядит как вызов метода. "
@@ -862,16 +863,17 @@ notes(s, "Агент правильно выбрал порядок: снача�
 
 # ---- Текстовый подход: плюсы и минусы ----
 s = slide_pros_cons("Подход 1: текстовый",
-    ["Ничего не нужно: ни индекса, ни IDE, ни запущенного проекта",
+    ["Никаких зависимостей",
+     "Скорость",
+     "Не требователен к ресурсам",
      "Работает где угодно: CI, worktree, удалённая машина",
      "Любой язык и формат файла"],
-    ["Одно имя – разные функции: FormattingRule.lint и комментарий попадают в замену",
-     "Та же функция – другая запись: вызов без точки в замену не попадает",
-     "Замена не проверяет результат: строка заменена – не значит, что вызов ведёт туда же",
-     "Каждое место – отдельная операция"])
+    ["Не учитывает семантику языка: перегрузки, переопределения, вызов с точкой и без точки, и т. д.",
+     "Применение не проверяет результат: строка заменена – не значит, что поведение не изменилось",
+     "Каждое место – отдельная операция, в которой можно ошибиться"], y=1.83, h=2.85)
 
 # ---- Текстовый подход: где ломается ----
-s = slide_blank("Подход 1: текстовый", "Где ломается")
+s = slide_blank("Подход 1: текстовый", "Полнота и корректность")
 textbox(s, 0.49, 1.22, 9.0, 0.26, "Одна строка, но две разные функции", size=12, color=GREY)
 card(s, 0.49, 1.7, 9.0, 1.6, line=WHITE, size=12.5, font=MONO, gap=2, margin=0.25, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("detekt-rules-style/…/UnusedParameterSpec.kt", {"color": GREY, "size": 10.5}),
@@ -902,13 +904,13 @@ slide_subplan(current="LSP-серверы", done={"Текстовый подхо
 
 # ---- LSP: что это ----
 s = slide_blank(CH_APPR, "Подход 2: LSP")
-textbox(s, 0.49, 1.25, 9.0, 0.69, [
-        "LSP (Language Server Protocol) – протокол между редактором или агентом и сервером языка",
-        "Сервер – отдельный процесс, который разбирает код и знает, что к какому символу относится",
-        "Один сервер на язык",
+textbox(s, 0.49, 1.29, 9.0, 0.69, [
+        "LSP (Language Server Protocol) – протокол между редактором / агентом и сервером языка",
+        "Сервер – это отдельный процесс, который разбирает код и знает, к какому символу что относится",
+        "Один сервер на один язык",
         ], size=12.5, color=GREY)
 labels = [("Клиент", "редактор или агент"), ("Запрос", "«переименуй символ здесь»"),
-          ("Сервер языка", "резолвит символы"), ("Правка", "список текстовых изменений; применяет клиент")]
+          ("Сервер языка", "резолвит символы"), ("Правка", "список текстовых изменений, применяет клиент")]
 for i, (t, sub) in enumerate(labels):
     card(s, X4N[i], 2.4, 1.67, 1.0, line=WHITE, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.05,
          text=[(t, {"size": 14, "bold": True}), (sub, {"size": 10.5, "color": GREY})])
@@ -942,13 +944,15 @@ notes(s, "Rename отказал в нашем прогоне – лучше, ч�
 
 # ---- LSP: плюсы и минусы (минусы – ограничения протокола) ----
 s = slide_pros_cons("Подход 2: LSP",
-    ["Легковесность: нужен только сервер языка",
-     "Поиск по символу: находит вызов без точки, различает одноимённые",
+    ["Нужен только сервер языка",
+     "Скорость",
+     "Не требователен к ресурсам",
+     "Работает где угодно: CI, worktree, удалённая машина",
      "Ошибки компиляции видны сразу после правки"],
     ["Из рефакторингов – только переименование",
-     "Сервер не знает о правках, пока клиент не сообщит",
-     "Один сервер – один язык",
-     "Конфликт – как решит сервер; «продолжить» нет"])
+     "Строгие рамки протокола LSP",
+     "На каждый язык нужен отдельный сервер",
+     "Не учитывает межъязыковые связи: например, Kotlin - Java"], y=1.84, h=2.58)
 notes(s, "Минусы – уровень протокола. Переименование – единственный запрос рефакторинга, которому клиент передаёт параметры (textDocument/rename); "
          "extract, inline, move бывают только как code actions: сервер сам предлагает список в точке курсора, передать имя или модуль нечем. "
          "Перенос, смена сигнатуры, удаление – в протоколе нет.  Что сервер делает внутри ограничений – своё у каждого: clangd и gopls отказывают, rust-analyzer помечает правку, Kotlin LSP отказал нам. "
@@ -963,26 +967,23 @@ slide_subplan(current="Инструменты IDE", done={"Текстовый п
 
 # ---- Движок: что это ----
 s = slide_blank(CH_APPR, "Подход 3: движок рефакторинга IDE (IntelliJ)")
-card(s, 0.49, 1.25, 9.0, 0.55, line=PURPLE, text="Инструменты IDE позволяют разделить: модель решает «что», движок – «как»",
+card(s, 0.49, 1.43, 9.0, 0.55, line=PURPLE, text="Инструменты IDE позволяют разделить: модель решает «что», движок – «как»",
      size=14, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.1)
-textbox(s, 0.49, 2.0, 9.0, 0.46, [
-        "Код представлен не текстом, а графом символов: символ – узел, ссылка – ребро к объявлению",
-        "«Все использования» – обход ссылок"], size=12, color=GREY)
+textbox(s, 0.49, 2.23, 9.0, 0.26, "Код представлен не текстом, а графом символов: символ – узел, ссылка – ребро к объявлению",
+        size=12, color=GREY)
 card(s, 0.49, 2.77, 4.4, 1.63, line=RED, size=11, font=MONO, gap=1, text=[
     ("КАК ВИДИТ GREP", {"size": 10.5, "color": RED, "bold": True, "font": FONT, "space_after": 6}),
     ("grep '\\.lint('  → 180 строк:", {"color": LILAC}),
     "  rule.lint(code)      Rule.lint",
     "  subject.lint(code)   FormattingRule.lint",
     "  rule.lint(ktFile)    перегрузка",
-    ("  lint(\"fun f() …\")   – не видно", {"color": RED}),
+    ("  lint(\"fun f() …\")    не найдено", {"color": RED}),
 ])
 card(s, 5.1, 2.77, 4.4, 1.63, line=GREEN, size=11, font=MONO, gap=1, text=[
     ("КАК ВИДИТ IDE", {"size": 10.5, "color": GREEN, "bold": True, "font": FONT, "space_after": 6}),
     ("Rule.lint(content)   99 ссылок", {"color": GREEN}),
-    ("  в т. ч. 2 без точки", {"color": GREEN}),
     ("Rule.lint(ktFile)    другой символ", {"color": GREY}),
     ("FormattingRule.lint  другой символ", {"color": GREY}),
-    ("Rule.compileAndLint  1428 ссылок", {"color": GREEN}),
 ])
 textbox(s, 0.49, 4.66, 9.0, 0.45, [
         "PSI (Program Structure Interface) – модель кода: дерево + ссылки между узлами",
@@ -992,12 +993,19 @@ notes(s, "Агент решает, что переименовать и как �
 
 # ---- Veai ----
 s = slide_blank(CH_APPR, "Veai агент")
-card(s, 0.49, 1.3, 9.0, 1.1, line=PURPLE, size=13, gap=6, anchor=MSO_ANCHOR.MIDDLE, text=[
-    ("•", "ИИ-агент для разработчиков, работает внутри IDE JetBrains"),
-    ("•", "Инструменты – те же, что у IDE: поиск по символам, рефакторинги, диагностика"),
+card(s, 0.49, 1.3, 9.0, 0.9, line=PURPLE, size=13, gap=5, anchor=MSO_ANCHOR.MIDDLE, text=[
+    ("•", "ИИ-агент с глубокой интеграцией в JetBrains IDE: IntelliJ IDEA, PyCharm, GoLand, WebStorm, Rider, PhpStorm, Android Studio"),
+    ("•", "Инструменты – те же, что у IDE: поиск использований по структуре кода, рефакторинг, инспекции, запуск тестов, отладчик"),
 ])
-card(s, 0.49, 2.55, 9.0, 2.55, line=AMBER, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER,
-     text=[("TODO: скриншот Veai внутри IDE с открытым кейсом detekt", {"size": 14, "color": AMBER, "bold": True})])
+cols3 = [("ИНСТРУМЕНТЫ IDE", ["Поиск использований с учётом языка", "Безопасный рефакторинг: Rename, Move, Safe Delete", "Запуск конфигураций и тестов, покрытие", "Отладчик: точки останова, стек, значения"]),
+         ("АНАЛИЗ", ["Инспекции IDE в работе агента", "Auto Review изменений агента", "Поиск уязвимостей", "Анализ нестабильных (flaky) тестов"]),
+         ("КОНТРОЛЬ", ["Agent Changes: diff по каждому файлу", "Edit Scope, ignore-файлы", "MCP-сервер: инструменты IDE внешним агентам", "AGENTS.md, Rules, Skills, Memory Bank"])]
+for i, (t, items) in enumerate(cols3):
+    card(s, X3[i], 2.4, 2.85, 2.7, line=WHITE, size=11, gap=4, margin=0.15,
+         text=[(t, {"size": 10.5, "color": LILAC, "bold": True, "space_after": 6})] + [("•", it) for it in items])
+anim(s, [0], [1], [2], [3])
+notes(s, "По veai.ru и veai.ru/docs (2026-10-14). Команда – более 50 инженеров, экс-JetBrains и Huawei, экспертиза в статическом и динамическом анализе кода, генерации тестов и символьном исполнении. "
+         "Дальше демо движка идёт на Veai.")
 
 # ---- Демо 3: движок ----
 s = slide_demo(CH_APPR, "Подход 3: движок рефакторинга IDE",
@@ -1017,14 +1025,14 @@ anim(s, [0, 1], [2, 3], range(4, 9))
 
 # ---- Движок: плюсы и минусы ----
 s = slide_pros_cons("Подход 3: движок IDE",
-    ["Полнота: находит все ссылки, включая другие языки и конфигурацию",
-     "Конфликты до правки: проверяет, куда приведёт вызов после правки, и показывает список конфликтов до применения",
-     "Атомарность: поиск, проверка и правка – одна операция; один откат на всю"],
-    ["Нужна запущенная IDE с индексами и кэшами",
-     "Индексация занимает время; в этот период рефакторинг недоступен",
-     "Применение правки – под блокировкой на запись",
-     "Worktree, CI, удалённые машины – стандартного способа нет",
-     "Runtime-рефлексия, связи через SQL, шаблоны, HTTP – вне модели кода"])
+    ["Почти полнота: находит почти все ссылки, включая другие языки и конфигурации",
+     "Конфликты до правки: проверяет и показывает список конфликтов до применения",
+     "Атомарность: одна операция рефакторинга, один Ctrl + Z"],
+    ["Нужна запущенная IDE",
+     "Индексация в IDE – не самая быстрая операция",
+     "Применение правки – блокировка на запись",
+     "Проблематично с Worktree, CI, удалёнными машинами",
+     "Есть ограничения: например, Runtime-рефлексия"])
 notes(s, "Полнота и корректность – далее по слайду на каждую. Атомарность: либо всё, либо ничего – не бывает «переименовано в 130 файлах из 133»; "
          "если код изменился между поиском и применением, движок не применяет правку и просит повторить поиск («There were changes in code after usages have been found»). "
          "Архитектурные изменения – не рефакторинг в смысле движка; это оговорка, не минус.")
@@ -1074,20 +1082,20 @@ def codebox(x, y, w, text, col=WHITE, size=10.5):
 def frame(x, y, w, h, title):
     card(s, x, y, w, h, line=LILAC, width=1.0, size=11, margin=0.15, text=[(title, {"color": LILAC, "bold": True})])
 g_k = _i()
-frame(0.49, 1.25, 5.8, 3.45, "Kotlin")
-codebox(0.65, 1.7, 5.5, "fun Rule.lint(content: String)", GREEN)          # объявление; низ 2.2
+frame(0.49, 1.42, 5.8, 3.45, "Kotlin")
+codebox(0.65, 1.87, 5.5, "fun Rule.lint(content: String)", GREEN)          # объявление; низ 2.37
 usages = [(0.65, 1.85, "subject.lint(code)"), (2.65, 1.75, "lint(\"fun f() {}\")"), (4.55, 1.6, "import test.lint")]
 for x, w, t in usages:
-    codebox(x, 3.6, w, t, size=10)
-    elbow_arrow(s, [(x + w / 2, 3.55), (x + w / 2, 2.2)])
+    codebox(x, 3.77, w, t, size=10)
+    elbow_arrow(s, [(x + w / 2, 3.72), (x + w / 2, 2.37)])
 g_j = _i()
-frame(6.7, 1.25, 2.8, 1.5, "Java")
-codebox(6.85, 1.7, 2.5, "lint(rule, code)")
-elbow_arrow(s, [(6.8, 1.9), (6.15, 1.9)])
+frame(6.7, 1.42, 2.8, 1.5, "Java")
+codebox(6.85, 1.87, 2.5, "lint(rule, code)")
+elbow_arrow(s, [(6.8, 2.07), (6.15, 2.07)])
 g_x = _i()
-frame(6.7, 3.0, 2.8, 1.7, "XML")
-codebox(6.85, 3.6, 2.5, "<bean class=\"MyRule\"/>")
-elbow_arrow(s, [(6.8, 3.85), (6.5, 3.85), (6.5, 2.1), (6.15, 2.1)], r=0.14)
+frame(6.7, 3.17, 2.8, 1.7, "XML")
+codebox(6.85, 3.77, 2.5, "<bean class=\"MyRule\"/>")
+elbow_arrow(s, [(6.8, 4.02), (6.5, 4.02), (6.5, 2.27), (6.15, 2.27)], r=0.14)
 anim(s, range(g_k, g_j), range(g_j, g_x), list(range(g_x, _i())))
 notes(s, "Объявление одно, ссылки на него – из разных файлов и разных языков: модули Kotlin, Java, XML дают свои узлы и свои ссылки, движок обходит их одинаково. "
          "Java и XML – иллюстрация возможности (в detekt функцию из Java не вызывают; Java-вызов показан со static import). Ссылка – слой поверх дерева: плагин может добавить связь туда, где компилятор её не видит. "
@@ -1095,19 +1103,19 @@ notes(s, "Объявление одно, ссылки на него – из р�
 
 # ---- Корректность ----
 s = slide_blank("Подход 3: движок IDE", "Корректность")
-card(s, 0.72, 1.39, 8.56, 0.6, line=PURPLE, text="Правка примеряется на копии в памяти: конфликты видны до того, как тронут файл",
+card(s, 0.72, 1.39, 8.56, 0.6, line=PURPLE, text="Правка примеряется на копии в памяти: конфликты видны до того, как изменен файл",
      size=13.5, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.1)
-steps = [("Копия вызова", "в памяти, файл не меняется"), ("Новое имя", "на копии"),
-         ("Разрешение", "заново: какой метод?"), ("Другой метод", "→ конфликт")]
+steps = [("Копия вызова", "в памяти, файл не меняется"), ("Переименование", "на копии"),
+         ("Проверка", "те же вызовы?"), ("Конфликт или переименование", "")]
 for i, (t, sub) in enumerate(steps):
     card(s, X4N[i], 2.29, 1.67, 0.8, line=WHITE, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.05,
-         text=[(t, {"size": 12, "bold": True}), (sub, {"size": 10.5, "color": GREY})])
+         text=[(t, {"size": 12, "bold": True})] + ([(sub, {"size": 10.5, "color": GREY})] if sub else []))
     if i < 3:
         arrow(s, X4N[i] + 1.8, 2.62)
 card(s, 0.72, 3.39, 3.7, 1.7, line=WHITE, size=11.5, gap=6, text=[
     ("ДО RENAME", {"size": 10.5, "color": GREY, "bold": True}),
     ("rule.compileAndLint(code)", {"font": MONO, "size": 12}),
-    ("rule.lint(code)  – другая функция, без компиляции", {"font": MONO, "size": 12, "color": GREEN}),
+    ("rule.lint(code) – другая функция, без компиляции", {"font": MONO, "size": 12, "color": GREEN}),
 ])
 card(s, 5.58, 3.39, 3.7, 1.7, line=WHITE, size=11.5, gap=6, text=[
     ("ПОСЛЕ RENAME", {"size": 10.5, "color": GREY, "bold": True}),
@@ -1145,11 +1153,10 @@ notes(s, "Не промпт, а продуктовое решение: Cursor у
 s = slide_blank(CH_APPR, "Bias агентов")
 textbox(s, 0.49, 1.15, 9.0, 0.25, "Документация Serena – MCP-сервера с инструментами LSP для агентов, октябрь 2026", size=11, color=GREY)
 picture(s, "img/serena-docs-attention.png", 0.49, 1.52, h=3.75)      # 1640×1082 → 5.68×3.75
-card(s, 6.4, 1.52, 3.1, 3.75, line=WHITE, size=12, gap=10, anchor=MSO_ANCHOR.MIDDLE, text=[
-    "«Описания встроенных инструментов Claude Code – почти 16k токенов; пользователь их не меняет»",
-    "«Почти невозможно убедить Opus 4.7 пользоваться Serena»",
-    ("Авторы дают отдельный системный промпт, чтобы это исправить", {"color": GREY}),
-])
+textbox(s, 6.4, 2.4, 3.1, 2.0, [
+    ("«Почти невозможно убедить Opus 4.7 пользоваться Serena»", {"size": 16, "bold": True, "color": LILAC, "space_after": 10}),
+    ("Авторы дают отдельный системный промпт, чтобы это исправить", {"size": 12, "color": GREY}),
+], size=16, anchor=MSO_ANCHOR.MIDDLE)
 notes(s, "Переход к LSP: Serena даёт агенту LSP, и её авторы пишут, что модель к ней сама не идёт. Демо LSP – на Claude Code + Serena. oraios.github.io/serena/02-usage/030_clients.html")
 
 # ---- Бенчмарк по моделям ----
@@ -1157,11 +1164,11 @@ s = slide_blank(CH_APPR, "Bias моделей")
 card(s, 0.49, 1.4, 4.4, 3.7, line=AMBER, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER,
      text=[("TODO: бенчмарк по моделям", {"size": 16, "color": AMBER, "bold": True})])
 card(s, 5.1, 1.4, 4.4, 3.7, line=WHITE, size=12, gap=8, text=[
-    ("Пилот AgentConnect, август 2026", {"size": 13, "bold": True, "color": LILAC, "space_after": 8}),
-    ("Модели Claude, LSP доступен как инструмент:", {"color": GREY}),
-    ("•", "выбирали LSP в 0–6 % задач на поиск места в коде"),
-    ("•", "в 3 % задач на переименование"),
-    ("•", "принудительный LSP снизил долю успешных задач со 100 % до 89 %"),
+    ("Эксперимент AgentConnect, август 2026", {"size": 13, "bold": True, "color": LILAC, "space_after": 4}),
+    ("Моделям Claude дали инструменты LSP рядом с grep и смотрели, что они выберут", {"color": GREY, "space_after": 8}),
+    ("•", "Поиск места в коде: LSP выбран в 0–6 % задач"),
+    ("•", "Переименование: в 3 % задач"),
+    ("•", "Если LSP навязать принудительно – успешных задач 89 % вместо 100 %"),
     ("agentconnect.md/blog/grep-beat-lsp-harness", {"size": 10.5, "color": GREY}),
 ])
 anim(s, [0], [1])
@@ -1176,20 +1183,15 @@ textbox(s, 0.49, 1.26, 9.0, 0.46, [
         "MCP (Model Context Protocol) – протокол общения LLM с инструментами",
         "MCP-сервер – сервер, отвечающий на запросы LLM по MCP"],
         size=12, color=GREY)
-card(s, 0.49, 2.0, 4.4, 3.1, line=WHITE, size=11.5, gap=4, text=[
-    ("ВСТРОЕННЫЙ MCP-СЕРВЕР INTELLIJ IDEA", {"size": 10.5, "color": LILAC, "bold": True, "space_after": 8}),
-    ("•", "Встроен с версии 2025.2; сервер включается в настройках"),
-    ("•", "Из рефакторингов – один инструмент: rename_refactoring"),
-    ("•", "Параметры: путь в проекте, имя символа, новое имя – на перегрузках неоднозначно"),
-    ("•", "Move и Safe Delete отсутствуют"),
-])
-card(s, 5.1, 2.0, 4.4, 3.1, line=WHITE, size=11.5, gap=4, text=[
-    ("VEAI MCP", {"size": 10.5, "color": LILAC, "bold": True, "space_after": 8}),
-    ("•", "Инструменты рефакторинга IntelliJ, доступные агенту по MCP"),
-    ("•", "Rename – переименование символа"),
-    ("•", "Move – перенос символа в другой файл или пакет"),
-    ("•", "Safe Delete – удаление с проверкой использований"),
-])
+mcp_cols = [("ВСТРОЕННЫЙ MCP-СЕРВЕР INTELLIJ IDEA", "Встроен с версии 2025.2, включается в настройках",
+             [("Rename", "rename_refactoring", GREEN), ("Move", "нет", RED), ("Safe Delete", "нет", RED)]),
+            ("MCP-СЕРВЕР VEAI", "Встроен с версии 5.17, бесплатно, без подписки",
+             [("Rename", "переименование символа", GREEN), ("Move", "перенос файла или каталога", GREEN), ("Safe Delete", "удаление с проверкой использований", GREEN)])]
+for i, (t, ver, tools) in enumerate(mcp_cols):
+    paras = [(t, {"size": 10.5, "color": LILAC, "bold": True, "space_after": 6}), (ver, {"color": GREY, "space_after": 10})]
+    for name, what, col in tools:
+        paras.append((f"{name} – {what}", {"color": col if col is RED else WHITE, "space_after": 6}))
+    card(s, [0.49, 5.1][i], 2.0, 4.4, 3.1, line=WHITE, size=12, gap=4, text=paras)
 anim(s, [0], [1], [2])
 
 slide_plan(done={CH_INTRO, CH_APPR, "MCP-серверы для рефакторинга"}, current="Итоги")
