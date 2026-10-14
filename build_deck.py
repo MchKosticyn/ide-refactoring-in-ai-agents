@@ -1076,7 +1076,7 @@ def frame(x, y, w, h, title):
 g_k = _i()
 frame(0.49, 1.25, 5.8, 3.45, "Kotlin")
 codebox(0.65, 1.7, 5.5, "fun Rule.lint(content: String)", GREEN)          # объявление; низ 2.2
-usages = [(0.65, 1.7, "subject.lint(code)"), (2.5, 1.85, "lint(\"fun f() {}\")"), (4.5, 1.65, "import test.lint")]
+usages = [(0.65, 1.85, "subject.lint(code)"), (2.65, 1.75, "lint(\"fun f() {}\")"), (4.55, 1.6, "import test.lint")]
 for x, w, t in usages:
     codebox(x, 3.6, w, t, size=10)
     elbow_arrow(s, [(x + w / 2, 3.55), (x + w / 2, 2.25)])
