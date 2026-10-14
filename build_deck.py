@@ -20,7 +20,9 @@ TEMPLATE = os.environ.get(
     "VEAI_TEMPLATE",
     "/Users/michael/Documents/Work/webinars/Вебинар 3_ Работа с ИИ на уровне пользователя.pptx",
 )
-OUT = "Доклад_ Рефакторинг в ИИ-агентах.pptx"
+DECK = "Доклад_ Рефакторинг в ИИ-агентах.pptx"     # рабочий файл Михаила – скрипт его НЕ перезаписывает
+OUT = os.path.join("build", DECK)                   # результат сборки; в рабочий файл копировать только после сравнения
+os.makedirs("build", exist_ok=True)
 
 TALK = "Использование инструментов рефакторинга IDE в ИИ-агентах"
 TALK_SHORT = "Рефакторинг в ИИ-агентах"
@@ -475,8 +477,9 @@ def slide_subplan(current=None, done=()):
         col = GREEN if title in done else PURPLE
         card(s, x, 1.9, w, 1.5, line=col, width=2.25 if title == current else 1.5, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER,
              text=[(str(i + 1), {"size": 26, "bold": True, "color": col}), (title, {"size": 15, "bold": title == current, "color": WHITE if title == current else col})])
-        if i < 2 and APPROACHES[i + 1] == current:
-            arrow(s, x + w + 0.2, 2.58, w=0.22, h=0.14, color=GREY)
+        if i < 2 and (APPROACHES[i + 1] == current or APPROACHES[i + 1] in done):
+            nx = geo[i + 1][0]
+            arrow(s, x + w + 0.12, 2.5, w=nx - (x + w) - 0.24, h=0.3, color=GREY)
     return s
 
 
@@ -622,6 +625,47 @@ def animate(slide, groups):
     slide._element.append(el)
 
 
+def elbow_arrow(slide, points, r=0.18, color=GREEN, width=1.5, dashed=True, head=True):
+    """Ортогональная ломаная через points (дюймы) со скруглёнными углами радиуса r; стрелка на конце."""
+    from pptx.oxml.ns import qn as _q
+    import math
+    xs = [p[0] for p in points]; ys = [p[1] for p in points]
+    x0, y0, x1, y1 = min(xs), min(ys), max(xs), max(ys)
+    pad = 0.05
+    sh = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(x0 - pad), Inches(y0 - pad), Inches(x1 - x0 + 2 * pad), Inches(y1 - y0 + 2 * pad))
+    E = lambda v: int(round(v * 914400))
+    W, H = E(x1 - x0 + 2 * pad), E(y1 - y0 + 2 * pad)
+    P = lambda x, y: (E(x - x0 + pad), E(y - y0 + pad))
+    cmds = []
+    px, py = P(*points[0]); cmds.append(f'<a:moveTo><a:pt x="{px}" y="{py}"/></a:moveTo>')
+    for i in range(1, len(points) - 1):
+        (ax, ay), (bx, by), (cx, cy) = points[i - 1], points[i], points[i + 1]
+        d1 = (math.copysign(1, bx - ax) if bx != ax else 0, math.copysign(1, by - ay) if by != ay else 0)
+        d2 = (math.copysign(1, cx - bx) if cx != bx else 0, math.copysign(1, cy - by) if cy != by else 0)
+        A = (bx - d1[0] * r, by - d1[1] * r)
+        lx, ly = P(*A); cmds.append(f'<a:lnTo><a:pt x="{lx}" y="{ly}"/></a:lnTo>')
+        st = (math.degrees(math.atan2(-d2[1], -d2[0])) % 360) * 60000
+        cross = d1[0] * d2[1] - d1[1] * d2[0]
+        sw = 5400000 if cross > 0 else -5400000
+        cmds.append(f'<a:arcTo wR="{E(r)}" hR="{E(r)}" stAng="{int(st)}" swAng="{sw}"/>')
+    lx, ly = P(*points[-1]); cmds.append(f'<a:lnTo><a:pt x="{lx}" y="{ly}"/></a:lnTo>')
+    geom = _et.fromstring(f'<a:custGeom xmlns:a="{_NS["a"]}"><a:avLst/><a:gdLst/><a:ahLst/><a:cxnLst/><a:rect l="0" t="0" r="r" b="b"/>'
+                          f'<a:pathLst><a:path w="{W}" h="{H}" fill="none">{"".join(cmds)}</a:path></a:pathLst></a:custGeom>')
+    spPr = sh._element.spPr
+    spPr.replace(spPr.find(_q("a:prstGeom")), geom)
+    sh.fill.background()
+    sh.line.color.rgb = color
+    sh.line.width = Pt(width)
+    sh.shadow.inherit = False
+    ln = sh.line._get_or_add_ln()
+    if dashed:
+        ln.append(ln.makeelement(_q("a:prstDash"), {"val": "dash"}))
+    ln.append(ln.makeelement(_q("a:round"), {}))
+    if head:
+        ln.append(ln.makeelement(_q("a:tailEnd"), {"type": "triangle", "w": "med", "len": "med"}))
+    return sh
+
+
 ANIM = {}
 
 
@@ -728,15 +772,17 @@ ide_tools = [("Find Usages", "img/ide-find-usages.gif", "⌥F7 – все исп
              ("Safe Delete", "img/ide-safe-delete.gif", "⌘⌫ – удалить compileAndLint: 1428 использований, удаление заблокировано")]
 for name, gif, sub in ide_tools:
     s = slide_blank(CH_INTRO, f"Инструменты рефакторинга IDE: {name}")
-    picture(s, gif, 1.5, 1.15, w=7.0)                                  # 1200×647 → 7.0×3.77
-    textbox(s, 0.49, 5.0, 9.0, 0.35, sub, size=11, color=GREY, align=PP_ALIGN.CENTER)
-    notes(s, "Запись IntelliJ IDEA на detekt (2026-10-14), gif зациклен. Говорим коротко: что нажали и что IDE сделала сама.")
+    from PIL import Image as _Img
+    _w, _h = _Img.open(gif).size
+    gw = min(8.2, 4.35 * _w / _h)                                      # вписать в 8.2×4.35 под заголовком
+    picture(s, gif, (10 - gw) / 2, 1.15, w=gw)
+    notes(s, sub + ". Запись IntelliJ IDEA на detekt (2026-10-14), gif зациклен. Говорим коротко: что нажали и что IDE сделала сама.")
 
 # ---- Человек в IDE: разбор ----
 s = slide_blank(CH_INTRO, "Подход 0: человек с IDE")
 result_table(s, [
-    (True, ""),
-    (True, ""),
+    (True, "78 из 78"),
+    (True, "конфликт до правки"),
 ], metrics=[("Время", "≈ 30 мин"), ("Стоимость", "≈ $30")])
 textbox(s, 0.49, 5.1, 9.0, 0.35, "Можно ли быстрее?", size=14, color=LILAC, bold=True, align=PP_ALIGN.CENTER)
 anim(s, [0, 1], [2, 3], [4, 5], [6])
@@ -998,52 +1044,53 @@ def dashed_arrow(slide, x1, y1, x2, y2, color=GREEN, width=1.5):
 
 
 s = slide_blank("Подход 3: движок IDE", "PSI: как IDE видит код")
-PX, PY, PW = 0.49, 1.2, 6.2                      # картинка на слайде
+PX, PY, PW = 0.4, 1.41, 6.2                      # картинка на слайде
 SC = PW / 2570                                   # дюймов на пиксель кропа (crop origin 30,260 в screenshot1.png)
 def px(x, y):
     return PX + (x - 30) * SC, PY + (y - 260) * SC
-picture(s, "img/psi-viewer.png", PX, PY, w=PW)   # 2570×1520 → 6.2×3.67
+picture(s, "img/psi-viewer.png", PX, PY, w=PW)   # 2570×1520 → 6.2×3.67 (раскладка Михаила: 0.4, 1.41)
 def outline(x1, y1, x2, y2, col=GREEN):
     ax, ay = px(x1, y1); bx, by = px(x2, y2)
     r = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(ax - 0.04), Inches(ay - 0.04), Inches(bx - ax + 0.08), Inches(by - ay + 0.08))
     r.adjustments[0] = 0.3; r.fill.background(); r.line.color.rgb = col; r.line.width = Pt(2); r.shadow.inherit = False
     return r
-outline(815, 492, 930, 557)                      # токен lint в коде
 outline(585, 1398, 1105, 1462)                   # узел REFERENCE_EXPRESSION
 nx, ny = px(1105, 1430)
-card(s, 6.75, 3.35, 2.75, 1.0, line=GREEN, size=10.5, font=MONO, gap=1, margin=0.12, anchor=MSO_ANCHOR.MIDDLE, text=[
+card(s, 6.92, 2.74, 2.75, 1.0, line=GREEN, size=10.5, font=MONO, gap=1, margin=0.12, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("RuleExtensions.kt", {"size": 9.5, "color": GREY, "font": FONT}),
     ("fun Rule.lint(content, …)", {"color": GREEN, "bold": True}),
 ])
-dashed_arrow(s, nx + 0.06, ny, 6.7, 3.85)
-textbox(s, 4.3, 3.35, 2.3, 0.4, "ссылка на объявление", size=10, color=GREEN, align=PP_ALIGN.CENTER)
-anim(s, [0], [1, 2], [3, 4, 5])
+elbow_arrow(s, [(nx + 0.06, ny), (5.0, ny), (5.0, 3.24), (6.87, 3.24)])
+anim(s, [0], [1], [2, 3])
 notes(s, "Скриншот PSI Viewer IntelliJ на BracesOnIfStatementsSpec.kt:2213. Дерево – синтаксис, его видит и парсер. Ссылка – то, чего в тексте нет: узел lint знает, к какому объявлению относится; "
          "выбор зависит от типа receiver и импортов. В настоящем дереве у этой строки 15 узлов; индексы хранят, где какое имя встречается, – обход ссылок быстрый.")
 
 # ---- Полнота ----
 s = slide_blank("Подход 3: движок IDE", "Полнота")
 _i = lambda: len(s.shapes) - 3
-def codebox(x, y, w, text, col=WHITE, size=11.5):
-    return card(s, x, y, w, 0.5, line=col, size=size, font=MONO, margin=0.12, anchor=MSO_ANCHOR.MIDDLE,
+def codebox(x, y, w, text, col=WHITE, size=10.5):
+    return card(s, x, y, w, 0.5, line=col, size=size, font=MONO, margin=0.08, anchor=MSO_ANCHOR.MIDDLE,
                 text=[(text, {"color": col if col is not WHITE else WHITE, "bold": col is GREEN})])
+def frame(x, y, w, h, title):
+    card(s, x, y, w, h, line=LILAC, width=1.0, size=11, margin=0.15, text=[(title, {"color": LILAC, "bold": True})])
 g_k = _i()
-card(s, 0.49, 1.25, 5.9, 3.9, line=LILAC, width=1.0, size=11, margin=0.15, text=[("Kotlin", {"color": LILAC, "bold": True})])
-codebox(0.75, 1.75, 3.6, "fun Rule.lint(content: String)", GREEN)
-for y, t in [(2.65, "subject.lint(code)"), (3.35, "lint(\"fun f() { $code }\")"), (4.05, "import …test.lint")]:
-    codebox(3.0, y, 3.1, t)
-    dashed_arrow(s, 2.95, y + 0.25, 2.2, 2.3)
+frame(0.49, 1.25, 5.8, 3.45, "Kotlin")
+codebox(0.65, 1.7, 5.5, "fun Rule.lint(content: String)", GREEN)          # объявление; низ 2.2
+usages = [(0.65, 1.7, "subject.lint(code)"), (2.5, 1.85, "lint(\"fun f() {}\")"), (4.5, 1.65, "import test.lint")]
+for x, w, t in usages:
+    codebox(x, 3.6, w, t, size=10)
+    elbow_arrow(s, [(x + w / 2, 3.55), (x + w / 2, 2.25)])
 g_j = _i()
-card(s, 6.6, 1.25, 2.9, 1.75, line=LILAC, width=1.0, size=11, margin=0.15, text=[("Java", {"color": LILAC, "bold": True})])
-codebox(6.75, 1.75, 2.6, "RuleExtensionsKt.lint(r, c)", size=10)
-dashed_arrow(s, 6.7, 2.0, 4.4, 2.0)
+frame(6.7, 1.25, 2.8, 1.5, "Java")
+codebox(6.85, 1.7, 2.5, "lint(rule, code)")
+elbow_arrow(s, [(6.8, 1.95), (6.2, 1.95)])
 g_x = _i()
-card(s, 6.6, 3.2, 2.9, 1.95, line=LILAC, width=1.0, size=11, margin=0.15, text=[("XML", {"color": LILAC, "bold": True})])
-codebox(6.75, 3.7, 2.6, "<bean class=\"…Rule\"/>")
-dashed_arrow(s, 6.7, 3.95, 4.1, 2.3)
+frame(6.7, 3.0, 2.8, 1.7, "XML")
+codebox(6.85, 3.6, 2.5, "<bean class=\"MyRule\"/>")
+elbow_arrow(s, [(6.8, 3.85), (6.5, 3.85), (6.5, 1.95), (6.2, 1.95)])
 anim(s, range(g_k, g_j), range(g_j, g_x), list(range(g_x, _i())))
-notes(s, "Объявление – одно, ссылки на него – из разных файлов и разных языков: модули Kotlin, Java, XML дают свои узлы и свои ссылки, движок обходит их одинаково. "
-         "Пример Java и XML – иллюстрация возможности: в detekt функцию из Java не вызывают. Ссылка – слой поверх дерева: плагин может добавить связь туда, где компилятор её не видит. "
+notes(s, "Объявление одно, ссылки на него – из разных файлов и разных языков: модули Kotlin, Java, XML дают свои узлы и свои ссылки, движок обходит их одинаково. "
+         "Java и XML – иллюстрация возможности (в detekt функцию из Java не вызывают; Java-вызов показан со static import). Ссылка – слой поверх дерева: плагин может добавить связь туда, где компилятор её не видит. "
          "Индексы – почему обход быстрый. На некомпилирующемся коде – частично: неразрешённые ссылки помечаются отдельно.")
 
 # ---- Корректность ----
@@ -1101,7 +1148,7 @@ picture(s, "img/serena-docs-attention.png", 0.49, 1.52, h=3.75)      # 1640×108
 card(s, 6.4, 1.52, 3.1, 3.75, line=WHITE, size=12, gap=10, anchor=MSO_ANCHOR.MIDDLE, text=[
     "«Описания встроенных инструментов Claude Code – почти 16k токенов; пользователь их не меняет»",
     "«Почти невозможно убедить Opus 4.7 пользоваться Serena»",
-    ("Авторы дают отдельный системный промпт против этого смещения", {"color": GREY}),
+    ("Авторы дают отдельный системный промпт, чтобы это исправить", {"color": GREY}),
 ])
 notes(s, "Переход к LSP: Serena даёт агенту LSP, и её авторы пишут, что модель к ней сама не идёт. Демо LSP – на Claude Code + Serena. oraios.github.io/serena/02-usage/030_clients.html")
 

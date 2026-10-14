@@ -10,3 +10,6 @@ STATE.md
 
 # внешние ассеты (gif-фон из вебинаров Veai)
 assets/
+
+# результат сборки build_deck.py
+build/
