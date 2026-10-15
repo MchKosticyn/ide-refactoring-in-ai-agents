@@ -436,7 +436,7 @@ def slide_pros_cons(kicker, pros, cons, note=None, y=1.4, h=3.7):
     return s
 
 
-PLAN = ["Введение", "Подходы к рефакторингу в агентах", "MCP-серверы для рефакторинга", "Итоги"]
+PLAN = ["Введение", "Подходы к рефакторингу в агентах", "Итоги"]
 APPROACHES = ["Текстовый подход", "LSP-серверы", "Инструменты IDE"]
 
 
@@ -513,8 +513,8 @@ COMPARE_COLS = ["Человек с IDE", "Агент + текстовый под
 COMPARE_ROWS = [
     ("Полнота", ["✓", "✗ 2 пропущены", "✓", "TODO"]),
     ("Корректность", ["✓", "✗ двойник, комментарий", "TODO", "TODO"]),
-    ("Время", ["≈ 30 мин", "13,7 мин", "TODO", "TODO"]),
-    ("Стоимость", ["≈ $30", "$4.41", "TODO", "TODO"]),
+    ("Время", ["≈ 40 мин", "13,7 мин", "TODO", "TODO"]),
+    ("Стоимость", ["≈ $7", "$4.41", "TODO", "TODO"]),
     ("Ходы", ["–", "53", "TODO", "TODO"]),
     ("Токены", ["–", "3,9M", "TODO", "TODO"]),
     ("Стартовый контекст", ["–", "TODO", "TODO", "TODO"]),
@@ -737,22 +737,22 @@ anim(s, [0], [1])
 
 # ---- Кейс ----
 s = slide_blank(CH_INTRO, "Кейс: detekt")
-textbox(s, 0.49, 1.31, 9.0, 0.48, [
+textbox(s, 0.49, 1.25, 9.0, 0.48, [
     "detekt – статический анализатор Kotlin: набор правил, каждое ищет в коде свой вид проблем",
-    "Правила тестируют на сниппетах – коротких фрагментах Kotlin-кода прямо в тесте"], size=12.5, color=GREY)
-card(s, 0.49, 1.95, 9.0, 1.15, line=WHITE, size=11.5, font=MONO, gap=1, margin=0.15, anchor=MSO_ANCHOR.MIDDLE, text=[
+    "Правила тестируют на сниппетах – короткие фрагменты Kotlin-кода прямо в тесте"], size=12.5, color=GREY)
+card(s, 0.49, 1.97, 9.0, 1.15, line=WHITE, size=11.5, font=MONO, gap=1, margin=0.15, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("fun Rule.compileAndLint(code)", {"color": LILAC, "bold": True}),
     ("    сначала компилирует сниппет компилятором Kotlin, потом прогоняет правило", {"color": GREY, "font": FONT}),
     ("fun Rule.lint(code)", {"color": LILAC, "bold": True}),
     ("    сразу прогоняет правило: сниппет может быть неполным и не компилироваться", {"color": GREY, "font": FONT}),
 ])
-card(s, 0.49, 3.5, 9.0, 1.77, line=PURPLE, size=12, gap=3, text=[
+card(s, 0.49, 3.39, 9.0, 1.77, line=PURPLE, size=12, gap=3, text=[
     ("ЗАДАЧА: PR #7873", {"size": 10.5, "color": LILAC, "bold": True, "space_after": 6}),
     ("Оставить одну функцию: lint(code, compile = true)", {"bold": True}),
     "compileAndLint(code) → lint(code) – 1428 вызовов",
-    "старый lint(code) → lint(code, compile = false) – 78 вызовов, чтобы тесты работали как раньше",
+    "lint(code) → lint(code, compile = false) – 78 вызовов",
     ("Суммарно нужно изменить: 1506 вызовов", {"bold": True}),
-    ("Не трогать: перегрузку lint(ktFile) – 36 вызовов, FormattingRule.lint – 66 вызовов", {"color": GREY}),
+    ("Не менять: перегрузку lint(ktFile) – 36 вызовов, FormattingRule.lint – 66 вызовов", {"color": GREY}),
 ])
 anim(s, [0, 1], [2])
 notes(s, "«Только в CI»: compileAndLint компилирует сниппет, только если сборка запущена с -Pcompile-test-snippets=true; это делает отдельный job в GitHub Actions, "
@@ -784,7 +784,7 @@ s = slide_blank(CH_INTRO, "Человек с IDE: результаты")
 result_table(s, [
     (True, "все 1506 вызовов"),
     (True, "поведение не изменилось"),
-], metrics=[("Время", "≈ 30 мин"), ("Стоимость", "≈ $30")])
+], metrics=[("Время", "≈ 40 мин"), ("Стоимость", "≈ $7")])
 textbox(s, 0.49, 5.1, 9.0, 0.35, "Можно ли быстрее?", size=14, color=LILAC, bold=True, align=PP_ALIGN.CENTER)
 anim(s, [0, 1], [2, 3], [4, 5], [6])
 notes(s, "Rename в занятое имя – IDE останавливает и показывает конфликт. Это то, что будем искать у агентов. "
@@ -855,7 +855,7 @@ s = slide_demo(CH_APPR, "Подход 1: текстовый",
 s = slide_blank(CH_APPR, "Подход 1: текстовый")
 result_table(s, [
     (False, "2 из 1506 вызовов пропущены"),
-    (False, "двойник и комментарий, но сборка зелёная"),
+    (False, "задел одноименную функцию, но сборка зелёная"),
 ], metrics=[("Время", "13,7 мин"), ("Стоимость", "$4.41"), ("Ходы", "53"), ("Токены", "3,9M"), ("Контекст", "TODO")])
 anim(s, [0, 1], [2, 3], range(4, 9))
 notes(s, "Агент правильно выбрал порядок: сначала старые lint, потом rename; двойник в другом модуле обошёл. Промах – там, где имя не выглядит как вызов метода. "
@@ -870,7 +870,7 @@ s = slide_pros_cons("Подход 1: текстовый",
      "Любой язык и формат файла"],
     ["Не учитывает семантику языка: перегрузки, переопределения, вызов с точкой и без точки, и т. д.",
      "Применение не проверяет результат: строка заменена – не значит, что поведение не изменилось",
-     "Каждое место – отдельная операция, в которой можно ошибиться"], y=1.83, h=2.85)
+     "Каждое место – отдельная операция, в которой можно ошибиться"], y=1.83, h=2.74)
 
 # ---- Текстовый подход: где ломается ----
 s = slide_blank("Подход 1: текстовый", "Полнота и корректность")
@@ -909,8 +909,8 @@ textbox(s, 0.49, 1.29, 9.0, 0.69, [
         "Сервер – это отдельный процесс, который разбирает код и знает, к какому символу что относится",
         "Один сервер на один язык",
         ], size=12.5, color=GREY)
-labels = [("Клиент", "редактор или агент"), ("Запрос", "«переименуй символ здесь»"),
-          ("Сервер языка", "резолвит символы"), ("Правка", "список текстовых изменений, применяет клиент")]
+labels = [("Клиент", "редактор или агент"), ("Запрос", "«переименуй этот символ»"),
+          ("Сервер языка", "резолвит символы"), ("Правка", "список изменений, применяет клиент")]
 for i, (t, sub) in enumerate(labels):
     card(s, X4N[i], 2.4, 1.67, 1.0, line=WHITE, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.05,
          text=[(t, {"size": 14, "bold": True}), (sub, {"size": 10.5, "color": GREY})])
@@ -993,17 +993,12 @@ notes(s, "Агент решает, что переименовать и как �
 
 # ---- Veai ----
 s = slide_blank(CH_APPR, "Veai агент")
-card(s, 0.49, 1.3, 9.0, 0.9, line=PURPLE, size=13, gap=5, anchor=MSO_ANCHOR.MIDDLE, text=[
-    ("•", "ИИ-агент с глубокой интеграцией в JetBrains IDE: IntelliJ IDEA, PyCharm, GoLand, WebStorm, Rider, PhpStorm, Android Studio"),
-    ("•", "Инструменты – те же, что у IDE: поиск использований по структуре кода, рефакторинг, инспекции, запуск тестов, отладчик"),
+card(s, 0.49, 1.4, 9.0, 3.6, line=PURPLE, size=15, gap=14, margin=0.35, anchor=MSO_ANCHOR.MIDDLE, text=[
+    ("•", "ИИ-агент с глубокой интеграцией в JetBrains IDE"),
+    ("•", "Инструменты IDE: поиск использований, рефакторинг – Rename, Move, Safe Delete; запуск тестов, отладчик"),
+    ("•", "Анализ: инспекции IDE, Auto Review изменений агента, поиск уязвимостей"),
 ])
-cols3 = [("ИНСТРУМЕНТЫ IDE", ["Поиск использований с учётом языка", "Безопасный рефакторинг: Rename, Move, Safe Delete", "Запуск конфигураций и тестов, покрытие", "Отладчик: точки останова, стек, значения"]),
-         ("АНАЛИЗ", ["Инспекции IDE в работе агента", "Auto Review изменений агента", "Поиск уязвимостей", "Анализ нестабильных (flaky) тестов"]),
-         ("КОНТРОЛЬ", ["Agent Changes: diff по каждому файлу", "Edit Scope, ignore-файлы", "MCP-сервер: инструменты IDE внешним агентам", "AGENTS.md, Rules, Skills, Memory Bank"])]
-for i, (t, items) in enumerate(cols3):
-    card(s, X3[i], 2.4, 2.85, 2.7, line=WHITE, size=11, gap=4, margin=0.15,
-         text=[(t, {"size": 10.5, "color": LILAC, "bold": True, "space_after": 6})] + [("•", it) for it in items])
-anim(s, [0], [1], [2], [3])
+anim(s, [0])
 notes(s, "По veai.ru и veai.ru/docs (2026-10-14). Команда – более 50 инженеров, экс-JetBrains и Huawei, экспертиза в статическом и динамическом анализе кода, генерации тестов и символьном исполнении. "
          "Дальше демо движка идёт на Veai.")
 
@@ -1025,14 +1020,14 @@ anim(s, [0, 1], [2, 3], range(4, 9))
 
 # ---- Движок: плюсы и минусы ----
 s = slide_pros_cons("Подход 3: движок IDE",
-    ["Почти полнота: находит почти все ссылки, включая другие языки и конфигурации",
-     "Конфликты до правки: проверяет и показывает список конфликтов до применения",
+    ["Полнота: находит почти все ссылки, включая другие языки и конфигурации",
+     "Корректность: проверяет и показывает список конфликтов до применения",
      "Атомарность: одна операция рефакторинга, один Ctrl + Z"],
     ["Нужна запущенная IDE",
      "Индексация в IDE – не самая быстрая операция",
      "Применение правки – блокировка на запись",
      "Проблематично с Worktree, CI, удалёнными машинами",
-     "Есть ограничения: например, Runtime-рефлексия"])
+     "Есть ограничения: например, Runtime-рефлексия"], y=1.7, h=2.85)
 notes(s, "Полнота и корректность – далее по слайду на каждую. Атомарность: либо всё, либо ничего – не бывает «переименовано в 130 файлах из 133»; "
          "если код изменился между поиском и применением, движок не применяет правку и просит повторить поиск («There were changes in code after usages have been found»). "
          "Архитектурные изменения – не рефакторинг в смысле движка; это оговорка, не минус.")
@@ -1135,9 +1130,13 @@ notes(s, "Не читать вслух. У текста нет символа; �
 # ---- Bias агентов (a): Codex и Claude Code ----
 s = slide_blank(CH_APPR, "Bias агентов")
 source_line(s, 0.49, 1.15, 9.0, "Codex CLI – системный промпт")
-picture(s, "img/codex-prompt.png", 0.49, 1.45, w=7.6)                # 1800×464 → 7.6×1.96
-source_line(s, 0.49, 3.55, 9.0, "Claude Code – системный промпт")
-picture(s, "img/claude-code-bypass-issue.png", 0.49, 3.85, w=7.6)    # 1640×329 → 7.6×1.52
+picture(s, "img/codex-prompt.png", 0.49, 1.45, w=5.9)                # 1800×464 → 5.9×1.52
+source_line(s, 0.49, 3.2, 9.0, "Claude Code – системный промпт")
+picture(s, "img/claude-code-bypass-issue.png", 0.49, 3.5, w=5.9)     # 1640×329 → 5.9×1.18
+textbox(s, 6.6, 1.9, 2.9, 2.5, [
+    ("«Ищи grep'ом, массовые замены делай скриптом»", {"size": 16, "bold": True, "color": LILAC, "space_after": 10}),
+    ("Так написано в системных промптах Codex и Claude Code", {"size": 12, "color": GREY}),
+], size=16, anchor=MSO_ANCHOR.MIDDLE)
 notes(s, "Это инструкция агента, а не выбор модели: та же модель в другом агенте инструменты вызывает. Единственный инструмент правки у терминальных агентов – замена строки или патч. "
          "Источники: github.com/openai/codex, codex-rs/core/gpt_5_codex_prompt.md (тот же текст в промптах для gpt-5.2); блок bypass/auto – по issue anthropics/claude-code #88475 (версии 2.1.228+). "
          "Документация Claude Code: на macOS и Linux Glob и Grep убраны из набора по умолчанию – поиск через find и grep в Bash. OpenCode: описание инструмента Edit предлагает replaceAll, «if you want to rename a variable».")
@@ -1145,8 +1144,12 @@ notes(s, "Это инструкция агента, а не выбор моде�
 # ---- Bias агентов (b): Cursor ----
 s = slide_blank(CH_APPR, "Bias агентов")
 source_line(s, 0.49, 1.15, 9.0, "Форум Cursor, июль 2026 – ответы сотрудников Cursor")
-picture(s, "img/cursor-forum-colin.png", 0.49, 1.45, w=9.0)          # 2340×534 → 9.0×2.05
-picture(s, "img/cursor-forum-maximep.png", 0.49, 3.65, w=9.0)        # 2340×382 → 9.0×1.47
+picture(s, "img/cursor-forum-colin.png", 0.49, 1.45, w=6.1)          # 2340×534 → 6.1×1.39
+picture(s, "img/cursor-forum-maximep.png", 0.49, 2.95, w=6.1)        # 2340×382 → 6.1×1.0
+textbox(s, 6.8, 1.6, 2.7, 2.5, [
+    ("«Семантический индекс отключён: модели хорошо ищут grep'ом»", {"size": 16, "bold": True, "color": LILAC, "space_after": 10}),
+    ("Не промпт, а продуктовое решение Cursor", {"size": 12, "color": GREY}),
+], size=16, anchor=MSO_ANCHOR.MIDDLE)
 notes(s, "Не промпт, а продуктовое решение: Cursor убрал семантический индекс, потому что модели справляются grep'ом. forum.cursor.com/t/…/165899")
 
 # ---- Bias агентов (c): Serena ----
@@ -1166,7 +1169,7 @@ card(s, 0.49, 1.4, 4.4, 3.7, line=AMBER, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIG
 card(s, 5.1, 1.4, 4.4, 3.7, line=WHITE, size=12, gap=8, text=[
     ("Эксперимент AgentConnect, август 2026", {"size": 13, "bold": True, "color": LILAC, "space_after": 4}),
     ("Моделям Claude дали инструменты LSP рядом с grep и смотрели, что они выберут", {"color": GREY, "space_after": 8}),
-    ("•", "Поиск места в коде: LSP выбран в 0–6 % задач"),
+    ("•", "Поиск в коде: LSP выбран в 0–6 % задач"),
     ("•", "Переименование: в 3 % задач"),
     ("•", "Если LSP навязать принудительно – успешных задач 89 % вместо 100 %"),
     ("agentconnect.md/blog/grep-beat-lsp-harness", {"size": 10.5, "color": GREY}),
@@ -1175,26 +1178,11 @@ anim(s, [0], [1])
 notes(s, "Оговорки – только здесь: пилот, 2–3 прогона на ячейку, rename через LSP не тестировали. Тезис статьи – «agent capability = model × harness»: "
          "модель сама к LSP не идёт, а если заставить без доработки агента – становится хуже.")
 
-slide_plan(done={CH_INTRO, CH_APPR}, current="MCP-серверы для рефакторинга")
+# ---- Veai CLI (заглушка Михаила, 2026-10-15) ----
+s = slide_blank(CH_APPR, "Veai CLI")
+notes(s, "TODO Михаил: содержание слайда.")
 
-# ---- MCP ----
-s = slide_blank("Готовые решения", "MCP-серверы для рефакторинга")
-textbox(s, 0.49, 1.26, 9.0, 0.46, [
-        "MCP (Model Context Protocol) – протокол общения LLM с инструментами",
-        "MCP-сервер – сервер, отвечающий на запросы LLM по MCP"],
-        size=12, color=GREY)
-mcp_cols = [("ВСТРОЕННЫЙ MCP-СЕРВЕР INTELLIJ IDEA", "Встроен с версии 2025.2, включается в настройках",
-             [("Rename", "rename_refactoring", GREEN), ("Move", "нет", RED), ("Safe Delete", "нет", RED)]),
-            ("MCP-СЕРВЕР VEAI", "Встроен с версии 5.17, бесплатно, без подписки",
-             [("Rename", "переименование символа", GREEN), ("Move", "перенос файла или каталога", GREEN), ("Safe Delete", "удаление с проверкой использований", GREEN)])]
-for i, (t, ver, tools) in enumerate(mcp_cols):
-    paras = [(t, {"size": 10.5, "color": LILAC, "bold": True, "space_after": 6}), (ver, {"color": GREY, "space_after": 10})]
-    for name, what, col in tools:
-        paras.append((f"{name} – {what}", {"color": col if col is RED else WHITE, "space_after": 6}))
-    card(s, [0.49, 5.1][i], 2.0, 4.4, 3.1, line=WHITE, size=12, gap=4, text=paras)
-anim(s, [0], [1], [2])
-
-slide_plan(done={CH_INTRO, CH_APPR, "MCP-серверы для рефакторинга"}, current="Итоги")
+slide_plan(done={CH_INTRO, CH_APPR}, current="Итоги")
 
 # ---- Что выбрать ----
 s = slide_blank("Итоги", "Что выбрать")
@@ -1243,6 +1231,24 @@ textbox(s, 5.17, 4.39, 4.42, 0.82, [
     ("Попробовать агента: veai.ru", {"bold": True}),
     ("Telegram-канал: @veai_devs", {"bold": True}),
 ], size=13, color=WHITE)
+
+# ---- Приложение: MCP (после «Спасибо», в план не входит) ----
+s = slide_blank("Готовые решения", "MCP-серверы для рефакторинга")
+textbox(s, 0.49, 1.49, 9.0, 0.46, [
+        "MCP (Model Context Protocol) – протокол общения LLM с инструментами",
+        "MCP-сервер – сервер, отвечающий на запросы LLM по MCP"],
+        size=12, color=GREY)
+mcp_cols = [("MCP-СЕРВЕР INTELLIJ", "Встроен в IDE с версии 2025.2, включается в настройках",
+             [("Rename", "переименование символа", GREEN), ("Move", "нет", RED), ("Safe Delete", "нет", RED)]),
+            ("MCP-СЕРВЕР VEAI", "Встроен в агента с версии Veai 5.17, бесплатно",
+             [("Rename", "переименование символа", GREEN), ("Move", "перенос файла или каталога", GREEN), ("Safe Delete", "удаление с проверкой использований", GREEN)])]
+for i, (t, ver, tools) in enumerate(mcp_cols):
+    paras = [(t, {"size": 10.5, "color": LILAC, "bold": True, "space_after": 6}), (ver, {"color": GREY, "space_after": 10})]
+    for name, what, col in tools:
+        paras.append((f"{name} – {what}", {"color": col if col is RED else WHITE, "space_after": 6}))
+    card(s, [0.49, 5.1][i], 2.66, 4.4, 1.91, line=WHITE, size=12, gap=4, text=paras)
+anim(s, [0], [1], [2])
+
 
 # ---------- анимация: только там, где по клику появляется аргумент ----------
 for _sl in prs.slides:
