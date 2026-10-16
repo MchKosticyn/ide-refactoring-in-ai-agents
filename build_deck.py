@@ -377,15 +377,10 @@ def slide_todo(kicker, title, what, items):
 def slide_demo(kicker, title, run, steps):
     """Демо: видео 16:9 слева, справа карточка «Агент / Модель»; шаги – в заметки."""
     s = slide_blank(kicker, title)
-    w = 6.6; h = w * 9 / 16
-    s.shapes.add_movie(run["video"], Inches(0.49), Inches(1.3), Inches(w), Inches(h),
+    textbox(s, 0.49, 1.17, 9.0, 0.3, f"{run['agent']} · {run['model']}", size=11.5, color=GREY)
+    w = 7.2; h = w * 9 / 16
+    s.shapes.add_movie(run["video"], Inches((10 - w) / 2), Inches(1.5), Inches(w), Inches(h),
                        poster_frame_image=run["poster"], mime_type="video/mp4")
-    card(s, 7.57, 2.4, 1.94, 1.51, line=PURPLE, size=13, gap=4, margin=0.2, anchor=MSO_ANCHOR.MIDDLE, text=[
-        ("АГЕНТ", {"size": 10.5, "color": LILAC, "bold": True}),
-        (run["agent"], {"bold": True, "space_after": 14}),
-        ("МОДЕЛЬ", {"size": 10.5, "color": LILAC, "bold": True}),
-        (run["model"], {"bold": True}),
-    ])
     notes(s, run["meta"] + ". Что происходит в ролике: " + " → ".join(steps) + ".")
     return s
 
@@ -769,7 +764,7 @@ card(s, 0.49, 3.39, 9.0, 1.77, line=PURPLE, size=12, gap=3, text=[
     "compileAndLint(code) → lint(code) – 1428 вызовов",
     "lint(code) → lint(code, compile = false) – 78 вызовов",
     ("Суммарно нужно изменить: 1506 вызовов", {"bold": True}),
-    ("Не менять: перегрузку lint(ktFile) – 36 вызовов, FormattingRule.lint – 66 вызовов", {"color": GREY}),
+    ("Не менять: перегрузку lint(ktFile) – 36 вызовов, FormattingRule.lint – 66 вызовов", {"bold": True}),
 ])
 anim(s, [0, 1], [2])
 notes(s, "«Только в CI»: compileAndLint компилирует сниппет, только если сборка запущена с -Pcompile-test-snippets=true; это делает отдельный job в GitHub Actions, "
@@ -831,7 +826,6 @@ textbox(s, 3.42, 3.92, 3.16, 0.3, "результат вызова", size=10.5, 
 textbox(s, 2.55, 4.84, 4.88, 0.25,
         "ИИ-агент = модель + контекст + инструменты",
         size=11.5, color=GREY, align=PP_ALIGN.CENTER)
-anim(s, [0], [2, 1], [3, 4], [5, 6], [7])
 
 # ---- план ----
 slide_plan(done={CH_INTRO}, current=CH_APPR)
@@ -956,7 +950,7 @@ s = slide_demo(CH_APPR, "Подход 2: LSP", DEMO["lsp"],
 s = slide_blank(CH_APPR, "Подход 2: LSP")
 result_table(s, [
     (True, "все 1506 вызовов, по ссылкам"),
-    (True, "чисто; лишнюю правку сервера откатил сам"),
+    (True, "поведение не изменилось"),
 ], metrics=DEMO["lsp"]["metrics"])
 anim(s, [0, 1], [2, 3], range(4, 8))
 notes(s, "Переименование по ссылкам нашло вызовы без точки и не тронуло одноимённые функции. Но правки применяет сервер: он удалил посторонний import assertThat в файле, "
@@ -1014,13 +1008,15 @@ notes(s, "Агент решает, что переименовать и как �
 
 # ---- Veai ----
 s = slide_blank(CH_APPR, "Veai агент в JetBrains IDE")
-picture(s, "img/veai-agent.gif", 0.4, 1.27, w=5.89)                  # 800×450 → 5.89×3.31; ролик с veai.ru, 24 с – раскладка Михаила
-textbox(s, 7.22, 1.27, 2.44, 3.8, [
-    ("Инструменты IDE:", {"bold": True}), "Find usages", "Rename", "Move", "Safe delete", "Отладчик", "Инспекции IDE", ("…", {"space_after": 8}),
-    ("Инструменты анализа:", {"bold": True}), "поиск уязвимостей (SAST)", "анализ на моргающие тесты", "создание тестов из исполнения", "…",
-], size=9, color=WHITE)
-textbox(s, 0.4, 4.85, 6.49, 0.55, "Veai = ИИ + инструменты IDE + инструменты анализа программ", size=14, color=LILAC, bold=True)
-anim(s, [0, 1], [2])
+picture(s, "img/veai-agent.gif", 0.49, 1.27, w=6.05)                 # 800×450 → 6.05×3.4; ролик с veai.ru, 24 с – раскладка Михаила
+card(s, 6.83, 1.27, 2.77, 1.9, line=PURPLE, size=10.5, gap=2, margin=0.15, text=[
+    ("ИНСТРУМЕНТЫ IDE", {"size": 10, "color": LILAC, "bold": True, "space_after": 4}),
+    "Find usages · Rename · Move · Safe delete", "Отладчик", "Инспекции IDE", "…"])
+card(s, 6.83, 3.3, 2.77, 1.37, line=GREEN, size=10.5, gap=2, margin=0.15, text=[
+    ("ИНСТРУМЕНТЫ АНАЛИЗА", {"size": 10, "color": GREEN, "bold": True, "space_after": 4}),
+    "Поиск уязвимостей (SAST)", "Анализ на моргающие тесты", "Создание тестов из исполнения", "…"])
+textbox(s, 0.49, 4.85, 9.11, 0.55, "Veai = ИИ + инструменты IDE + инструменты анализа программ", size=14, color=LILAC, bold=True, align=PP_ALIGN.CENTER)
+anim(s, [0], [1], [2], [3])
 notes(s, "По veai.ru и veai.ru/docs (2026-10-14). Команда – более 50 инженеров, экс-JetBrains и Huawei, экспертиза в статическом и динамическом анализе кода, генерации тестов и символьном исполнении. "
          "Дальше демо движка идёт на Veai.")
 
@@ -1045,7 +1041,7 @@ notes(s, "Та же модель, что в демо 1–2. Оба переим�
 
 # ---- Движок: плюсы и минусы ----
 s = slide_pros_cons("Подход 3: движок IDE",
-    ["Полнота: находит почти все ссылки, включая другие языки и конфигурации",
+    ["Полнота: находит все ссылки, включая другие языки и конфигурации",
      "Корректность: проверяет и показывает список конфликтов до применения",
      "Атомарность: одна операция рефакторинга, один Ctrl + Z"],
     ["Нужна запущенная IDE",
@@ -1172,19 +1168,19 @@ notes(s, "Выборка Максима Паршина: Claude Code 16 прог�
 
 # ---- Переход к Bias ----
 s = slide_blank(CH_APPR, "")
-picture(s, "img/meme-distracted.jpg", 0.49, 1.15, h=3.2)           # 1200×800 → 4.8×3.2
-textbox(s, 5.5, 1.15, 4.0, 3.2, ["Дали агенту классные инструменты, а он ими не пользуется…", "Почему?"], size=22, bold=True, color=WHITE, anchor=MSO_ANCHOR.MIDDLE)
+picture(s, "img/meme-drake.jpg", 0.49, 1.15, h=4.0)                # 1200×1200 → 4.0×4.0
+textbox(s, 4.9, 1.15, 4.6, 4.0, ["Дали агенту классные инструменты, а он ими не пользуется…", "Почему?"], size=22, bold=True, color=WHITE, anchor=MSO_ANCHOR.MIDDLE)
 notes(s, "Переход: движок показал лучший результат, а терминальные агенты по умолчанию идут в grep и sed. Дальше – почему: инструкции агентов и привычки моделей.")
 
 # ---- Bias агентов (a): Codex и Claude Code ----
 s = slide_blank(CH_APPR, "Bias агентов")
-source_line(s, 0.49, 1.15, 9.0, "Codex CLI – системный промпт")
-picture(s, "img/codex-prompt.png", 0.49, 1.45, w=5.9)                # 1800×464 → 5.9×1.52
-source_line(s, 0.49, 3.2, 9.0, "Claude Code – системный промпт")
-picture(s, "img/claude-code-bypass-issue.png", 0.49, 3.5, w=5.9)     # 1640×329 → 5.9×1.18
-textbox(s, 6.6, 1.83, 2.9, 0.77, [("«Для поиска используй rg, для редактирования – скрипты»", {"size": 14, "bold": True, "color": LILAC})],
+source_line(s, 0.49, 1.17, 9.0, "Codex CLI – системный промпт")
+picture(s, "img/codex-prompt.png", 0.49, 1.59, w=5.9)                # 1800×464 → 5.9×1.52
+source_line(s, 0.49, 3.39, 9.0, "Claude Code – системный промпт")
+picture(s, "img/claude-code-bypass-issue.png", 0.49, 3.76, w=5.9)    # 1640×329 → 5.9×1.18
+textbox(s, 6.6, 1.97, 2.9, 0.77, [("«Для поиска используй rg, для редактирования – скрипты»", {"size": 14, "bold": True, "color": LILAC})],
         size=14, anchor=MSO_ANCHOR.MIDDLE)
-textbox(s, 6.6, 3.59, 2.9, 1.0, [("«Работай через bash: для чтения – cat, для поиска – grep, для редактирования – sed»", {"size": 14, "bold": True, "color": LILAC})],
+textbox(s, 6.6, 3.85, 2.9, 1.0, [("«Работай через bash: для чтения – cat, для поиска – grep, для редактирования – sed»", {"size": 14, "bold": True, "color": LILAC})],
         size=14, anchor=MSO_ANCHOR.MIDDLE)
 notes(s, "Это инструкция агента, а не выбор модели: та же модель в другом агенте инструменты вызывает. Единственный инструмент правки у терминальных агентов – замена строки или патч. "
          "Источники: github.com/openai/codex, codex-rs/core/gpt_5_codex_prompt.md (тот же текст в промптах для gpt-5.2); блок bypass/auto – по issue anthropics/claude-code #88475 (версии 2.1.228+). "
@@ -1192,13 +1188,13 @@ notes(s, "Это инструкция агента, а не выбор моде�
 
 # ---- Bias агентов (b): Cursor ----
 s = slide_blank(CH_APPR, "Bias агентов")
-source_line(s, 0.49, 1.15, 9.0, "Форум Cursor, июль 2026 – ответы сотрудников Cursor")
-picture(s, "img/cursor-forum-colin.png", 0.49, 1.45, w=6.1)          # 2340×534 → 6.1×1.39
-picture(s, "img/cursor-forum-maximep.png", 0.49, 2.95, w=6.1)        # 2340×382 → 6.1×1.0
-textbox(s, 6.8, 1.45, 2.7, 1.39, [
+source_line(s, 0.49, 1.41, 9.0, "Форум Cursor, июль 2026 – ответы сотрудников Cursor")
+picture(s, "img/cursor-forum-colin.png", 0.49, 1.97, w=6.1)          # 2340×534 → 6.1×1.39
+picture(s, "img/cursor-forum-maximep.png", 0.49, 3.7, w=6.1)         # 2340×382 → 6.1×1.0
+textbox(s, 6.8, 1.97, 2.7, 1.39, [
     ("«Семантический индекс (RAG) отключён в пользу grep»", {"size": 14, "bold": True, "color": LILAC}),
 ], size=14, anchor=MSO_ANCHOR.MIDDLE)
-textbox(s, 6.8, 2.95, 2.7, 1.0, [
+textbox(s, 6.8, 3.7, 2.7, 1.0, [
     ("«Модели научились искать с помощью grep, индекс (RAG) не нужен»", {"size": 14, "bold": True, "color": LILAC}),
 ], size=14, anchor=MSO_ANCHOR.MIDDLE)
 notes(s, "Не промпт, а продуктовое решение: Cursor убрал семантический индекс, потому что модели справляются grep'ом. forum.cursor.com/t/…/165899")
@@ -1267,12 +1263,12 @@ notes(s, "Итог по выбору подхода – просьба оргк�
 # ---- Veai CLI ----
 s = slide_blank("Итоги", "Veai CLI")
 picture(s, "img/veai-cli.gif", 0.49, 1.3, w=6.0)                     # 800×500 → 6.0×3.75; ролик с veai.ru/cli, 29 с
-card(s, 6.7, 1.3, 2.8, 3.75, line=PURPLE, size=11.5, gap=8, margin=0.2, text=[
-    ("Русский Claude Code", {"size": 14, "bold": True, "space_after": 8}),
+card(s, 6.87, 1.65, 2.8, 3.04, line=PURPLE, size=11.5, gap=8, margin=0.2, text=[
+    ("«Русский Claude Code»", {"size": 14, "bold": True, "space_after": 8}),
     ("•", "Все топовые модели в одной подписке"),
     ("•", "Работает без VPN"),
     ("•", "Оплата русской картой"),
-    ("•", "Стандартный набор: субагенты, правила, скиллы, MCP"),
+    ("•", "Джентльменский набор: субагенты, правила, скиллы, MCP, …"),
     ("•", "Управление из Telegram"),
     ("veai.ru/cli", {"size": 14, "bold": True, "color": LILAC, "space_before": 6}),
 ])
@@ -1326,7 +1322,7 @@ for i, (t, ver, tools) in enumerate(mcp_cols):
     paras = [(t, {"size": 10.5, "color": LILAC, "bold": True, "space_after": 6}), (ver, {"color": GREY, "space_after": 10})]
     for name, what, col in tools:
         paras.append((f"{name} – {what}", {"color": col if col is RED else WHITE, "space_after": 6}))
-    card(s, [0.49, 5.1][i], 2.66, 4.4, 1.91, line=WHITE, size=12, gap=4, text=paras)
+    card(s, [0.49, 5.1][i], 2.66, 4.4, 2.13, line=WHITE, size=12, gap=4, text=paras)
 anim(s, [0], [1], [2])
 
 
@@ -1336,6 +1332,12 @@ for _sl in prs.slides:
     if _spec:
         _content = list(_sl.shapes)[3:]
         animate(_sl, [[_content[i] for i in g] for g in _spec])
+
+# ---- Запасной вариант перехода к Bias (мем «distracted boyfriend») ----
+s = slide_blank("Запасной слайд", "")
+picture(s, "img/meme-distracted.jpg", 0.49, 1.15, h=3.2)           # 1200×800 → 4.8×3.2
+textbox(s, 5.5, 1.15, 4.0, 3.2, ["Дали агенту классные инструменты, а он ими не пользуется…", "Почему?"], size=22, bold=True, color=WHITE, anchor=MSO_ANCHOR.MIDDLE)
+notes(s, "Запасной вариант слайда 39: если «Drake» не зайдёт, поставить этот.")
 
 # ---------- язык текста: без lang="ru" PowerPoint проверяет орфографию как английскую ----------
 from pptx.oxml.ns import qn as _qn
