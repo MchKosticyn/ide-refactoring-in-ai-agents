@@ -241,12 +241,12 @@ def arrow(slide, x, y, w=0.32, h=0.14, color=PURPLE):
     return a
 
 
-def axis(slide, x, y, w, left="синтаксис", right="семантика", color=GREY, size=10):
+def axis(slide, x, y, w, left="синтаксис", right="семантика", color=GREY, size=10, width=1.25):
     """Ось со стрелкой вправо и подписями концов: синтаксис → семантика."""
     from pptx.oxml.ns import qn as _q
     ln = slide.shapes.add_connector(1, Inches(x), Inches(y), Inches(x + w), Inches(y))
     ln.line.color.rgb = color
-    ln.line.width = Pt(1.25)
+    ln.line.width = Pt(width)
     ln.line._get_or_add_ln().append(ln.line._get_or_add_ln().makeelement(_q("a:tailEnd"), {"type": "triangle", "w": "med", "len": "med"}))
     textbox(slide, x, y + 0.05, w / 2, 0.25, left, size=size, color=color)
     textbox(slide, x + w / 2, y + 0.05, w / 2, 0.25, right, size=size, color=color, align=PP_ALIGN.RIGHT)
@@ -476,7 +476,7 @@ def slide_subplan(current=None, done=()):
         if i < 2 and (APPROACHES[i + 1] == current or APPROACHES[i + 1] in done):
             gap_c = (x + w + geo[i + 1][0]) / 2
             arrow(s, gap_c - 0.2, 2.5, w=0.4, h=0.3, color=GREY)
-    axis(s, geo[0][0], 3.75, geo[2][0] + geo[2][1] - geo[0][0], size=11)
+    axis(s, geo[0][0], 3.75, geo[2][0] + geo[2][1] - geo[0][0], size=13, color=WHITE, width=2.0)
     return s
 
 
@@ -703,18 +703,18 @@ s = slide_title(["Использование инструментов", "реф�
 s = slide_blank(TALK_SHORT, "О нас")
 people = [("Михаил Костицын", "Спикер", "img/photo-michael.jpg",
            ["Ведущий разработчик Veai",
-            "7 лет в разработке: статический анализ программ, формальная верификация",
-            "С 2023 года – разработка ИИ-агентов"]),
+            "Начал путь в разработке с анализа программ и формальной верификации",
+            "С 2023 года занимаюсь разработкой систем с искусственным интеллектом"]),
           ("Максим Паршин", "Эксперт", "img/photo-maxim.jpg",
-           ["Разработчик ИИ-агента Veai для JetBrains IDE",
-            "Раньше – символьное исполнение и генерация тестов в Huawei",
+           ["Разработчик Veai",
+            "Ранее разрабатывал движок символьного исполнения и генерацию тестов в Huawei",
             "Сейчас – формальные методы анализа программ вместе с ИИ-моделями"])]
 for i, (name, role, photo, lines) in enumerate(people):
     x = 0.49 + i * 4.6
     card(s, x, 1.45, 4.4, 3.7, line=PURPLE if i == 0 else WHITE)
     picture(s, photo, x + 0.25, 1.7, w=1.5)
     textbox(s, x + 1.95, 1.75, 2.3, 0.53, [(name, {"size": 16, "bold": True}), (role, {"size": 12, "color": LILAC})], size=16)
-    textbox(s, x + 0.25, 3.35, 3.9, 1.7, [(ln, {"color": todo_color(ln, WHITE)}) for ln in lines], size=12, color=WHITE, space_after=6)
+    textbox(s, x + 0.25, 3.35, 3.9, 1.24, [(ln, {"color": todo_color(ln, WHITE)}) for ln in lines], size=12, color=WHITE, space_after=6)
 
 # ---- план ----
 slide_plan(current=CH_INTRO)
@@ -740,11 +740,11 @@ s = slide_blank(CH_INTRO, "Зачем это QA")
 card(s, 0.49, 1.4, 9.0, 2.45, line=WHITE, size=16, gap=12, margin=0.35, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("•", "Миграция фреймворка: Selenium → Playwright, JUnit 4 → 5"),
     ("•", "Наведение структуры: PageObject, композиция фикстур"),
-    ("•", "Смена тестового API проекта: хелперы, базовые классы"),
+    ("•", "Смена тестового API: переименовали хелпер, заменили базовый класс тестов"),
     ("•", "…"),
 ])
 card(s, 0.49, 4.1, 9.0, 0.9, line=RED, size=15, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, text=
-     "Зелёные тесты не всегда доказывают, что поведение то же")
+     "Зелёные тесты не всегда доказывают, что поведение не изменилось")
 anim(s, [0], [1])
 
 # ---- Кейс ----
@@ -830,7 +830,10 @@ anim(s, [0], [2, 1], [3, 4], [5, 6], [7])
 
 # ---- план ----
 slide_plan(done={CH_INTRO}, current=CH_APPR)
-slide_subplan(current="Текстовый подход")
+s = slide_subplan(current="Текстовый подход")
+notes(s, "Ось: синтаксис – как код записан: буквы, строки, имена. Семантика – что он значит: какая функция вызывается на самом деле. "
+         "subject.lint(code) в двух файлах пишется одинаково, но может вызывать разные функции. grep видит запись, IDE видит смысл. "
+         "Три подхода – три точки на этой оси, слева направо.")
 
 # ---- Текстовый подход: что это ----
 s = slide_blank(CH_APPR, "Подход 1: текстовый")
@@ -866,7 +869,7 @@ s = slide_demo(CH_APPR, "Подход 1: текстовый", DEMO["text"],
 s = slide_blank(CH_APPR, "Подход 1: текстовый")
 result_table(s, [
     (True, "все 1506 вызовов"),
-    (False, "задел чужую сборку и комментарий"),
+    (False, "задел другую сборку и комментарий"),
 ], metrics=DEMO["text"]["metrics"])
 anim(s, [0, 1], [2, 3], range(4, 8))
 notes(s, "Полнота: сильная модель нашла всё, включая два вызова без точки (в 2 из 16 прогонов их пропускали). Корректность: скрипт по подстроке дописал compile = false "
@@ -908,7 +911,7 @@ notes(s, "Пример из прогонов 2026-10-10: в 4 из 5 агент 
          "Вывод: нужен инструмент, который видит функции и их вызовы, а не строки.")
 
 # ---- Сравнение: после текста ----
-s = slide_blank("Сравнение", "Результат и цена")
+s = slide_blank("Сравнение", "Сравнение подходов")
 compare_table(s, upto="Агент + текстовый подход")
 notes(s, "Пауза после подхода. Таблица растёт по ходу доклада: после каждого подхода – колонка.")
 
@@ -972,7 +975,7 @@ notes(s, "Минусы – уровень протокола. Переимено
          "Вывод: символы видит, оба вызова без точки нашёл; но операция одна, конфликт как повезёт, один язык. Нужен движок.")
 
 # ---- Сравнение: после LSP ----
-s = slide_blank("Сравнение", "Результат и цена")
+s = slide_blank("Сравнение", "Сравнение подходов")
 compare_table(s, upto="Агент + LSP")
 notes(s, "Пауза после подхода. После движка добавится четвёртая колонка.")
 
@@ -1006,12 +1009,13 @@ notes(s, "Агент решает, что переименовать и как �
 
 # ---- Veai ----
 s = slide_blank(CH_APPR, "Veai агент")
-card(s, 0.49, 1.4, 9.0, 3.6, line=PURPLE, size=15, gap=14, margin=0.35, anchor=MSO_ANCHOR.MIDDLE, text=[
+picture(s, "img/veai-agent.gif", 0.49, 1.35, w=4.0)                  # 800×450 → 4.0×2.25; ролик с veai.ru, 24 с
+card(s, 4.7, 1.35, 4.8, 3.7, line=PURPLE, size=13, gap=12, margin=0.3, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("•", "ИИ-агент с глубокой интеграцией в JetBrains IDE"),
-    ("•", "Инструменты IDE: поиск использований, рефакторинг – Rename, Move, Safe Delete; запуск тестов, отладчик"),
-    ("•", "Анализ: инспекции IDE, Auto Review изменений агента, поиск уязвимостей"),
+    ("•", "Инструменты IDE: find usages, rename, move, safe delete, отладчик, инспекции IDE, …"),
+    ("•", "Инструменты анализа: поиск уязвимостей (SAST), анализ моргающих тестов, создание тестов из исполнения, …"),
 ])
-anim(s, [0])
+anim(s, [0, 1])
 notes(s, "По veai.ru и veai.ru/docs (2026-10-14). Команда – более 50 инженеров, экс-JetBrains и Huawei, экспертиза в статическом и динамическом анализе кода, генерации тестов и символьном исполнении. "
          "Дальше демо движка идёт на Veai.")
 
@@ -1026,8 +1030,8 @@ s = slide_demo(CH_APPR, "Подход 3: движок рефакторинга I
 # ---- Разбор демо 3 ----
 s = slide_blank(CH_APPR, "Подход 3: движок рефакторинга IDE")
 result_table(s, [
-    (True, "все 1506 вызовов, по ссылкам"),
-    (True, "0 конфликтов, ничего лишнего"),
+    (True, "все 1506 вызовов"),
+    (True, "поведение не изменилось"),
 ], metrics=DEMO["engine"]["metrics"])
 anim(s, [0, 1], [2, 3], range(4, 8))
 notes(s, "Та же модель, что в демо 1–2. Оба переименования – движком, с пробным прогоном и проверкой конфликтов до записи. detekt-sample-extensions не тронут: "
@@ -1124,61 +1128,49 @@ for i, (t, sub) in enumerate(steps):
          text=[(t, {"size": 12, "bold": True})] + ([(sub, {"size": 10.5, "color": GREY})] if sub else []))
     if i < 3:
         arrow(s, X4N[i] + 1.8, 2.62)
-card(s, 0.72, 3.39, 3.7, 1.7, line=WHITE, size=11.5, gap=6, text=[
-    ("ДО RENAME", {"size": 10.5, "color": GREY, "bold": True}),
-    ("rule.compileAndLint(code)", {"font": MONO, "size": 12}),
-    ("rule.lint(code) – другая функция, без компиляции", {"font": MONO, "size": 12, "color": GREEN}),
+# пример: по клику первая строка переименовывается и становится неотличима от второй; затем вердикт движка
+card(s, 0.72, 3.39, 8.56, 1.0, line=WHITE, size=12, font=MONO, gap=3, margin=0.2, anchor=MSO_ANCHOR.MIDDLE, text=[
+    ("rule.compileAndLint(code)   // компилирует сниппет", {"color": WHITE}),
+    ("rule.lint(code)             // другая функция, без компиляции", {"color": GREEN}),
 ])
-card(s, 5.58, 3.39, 3.7, 1.7, line=WHITE, size=11.5, gap=6, text=[
-    ("ПОСЛЕ RENAME", {"size": 10.5, "color": GREY, "bold": True}),
-    ("rule.lint(code)", {"font": MONO, "size": 12}),
-    ("rule.lint(code)  – неразличимы; 78 вызовов меняют смысл", {"font": MONO, "size": 12, "color": RED}),
+card(s, 0.72, 3.39, 8.56, 1.0, line=RED, fill=RGBColor(0x1A, 0x12, 0x33), size=12, font=MONO, gap=3, margin=0.2, anchor=MSO_ANCHOR.MIDDLE, text=[
+    ("rule.lint(code)             // переименовано", {"color": RED}),
+    ("rule.lint(code)             // неразличимы: 78 вызовов меняют смысл", {"color": RED}),
 ])
-arrow(s, 4.7, 4.14, w=0.6, h=0.16)
-anim(s, [0], [1], [2, 3], [4, 5], [6, 7], [8, 9, 10])
+card(s, 0.72, 4.52, 8.56, 0.55, line=GREEN, size=12.5, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.1,
+     text="Движок видит это на копии и останавливается: конфликт «lint уже объявлена»")
+anim(s, [0], [1], [2, 3], [4, 5], [6, 7], [8], [9], [10])
 notes(s, "Механизм для метода: копия выражения-вызова, новое имя, повторный резолв. На кейсе – конфликт объявления.")
 
 # ---- 40 прогонов ----
 s = slide_blank("Сравнение", "40 прогонов одной задачи")
-textbox(s, 0.49, 1.22, 9.0, 0.28, "Opus 5.5 · чекер на итоговом диффе · данные Максима Паршина, октябрь 2026", size=11.5, color=GREY)
-RUNS_COLS = ["Текст\nClaude Code · 16", "LSP\nClaude Code + Serena · 15", "Инструменты IDE\nVeai · 9"]
-RUNS_ROWS = [
-    ("Задача решена (5 / 5)", ["16", "10", "9"]),
-    ("Чисто: решена и ничего лишнего", ["5", "7", "9"]),
-    ("Хоть одна лишняя правка в итоге", ["11", "6", "0"]),
-    ("Правил чужую сборку: наступил / осталось", ["14 / 6", "13 / 4", "0 / 0"]),
-    ("Испортил комментарий: наступил / осталось", ["8 / 3", "2 / 2", "0 / 0"]),
-    ("Сервер LSP удалил чужой импорт", ["–", "5 / 2", "–"]),
-    ("Прогонов с откатом своих правок", ["9", "10", "0"]),
-]
-rx0, ry0 = 0.49, 1.6
-rcw = [3.9, 1.7, 1.7, 1.7]
-x = rx0 + rcw[0]
-for i, c in enumerate(RUNS_COLS):
-    textbox(s, x, ry0, rcw[i + 1], 0.5, [(c.split("\n")[0], {"bold": True, "color": LILAC}), (c.split("\n")[1], {"size": 9.5, "color": GREY})],
-            size=11.5, align=PP_ALIGN.CENTER)
-    x += rcw[i + 1]
-hline(s, rx0, ry0 + 0.55, sum(rcw), color=PURPLE, width=1.2)
-for r, (name, vals) in enumerate(RUNS_ROWS):
-    y = ry0 + 0.62 + r * 0.4
-    textbox(s, rx0, y, rcw[0], 0.4, name, size=11, color=WHITE, anchor=MSO_ANCHOR.MIDDLE)
-    x = rx0 + rcw[0]
-    for i, v in enumerate(vals):
-        best = i == 2 and v not in ("–",)
-        textbox(s, x, y, rcw[i + 1], 0.4, v, size=12, color=GREEN if best else WHITE, bold=best, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-        x += rcw[i + 1]
-    if r == 1:
-        hline(s, rx0, y + 0.4, sum(rcw), color=GREY, width=0.5)
-notes(s, "Выборка: Claude Code 16 прогонов, Claude Code + Serena 15, Veai 9 (5 на Opus 5.5, 4 на GPT-6.1-Sol); два варианта промпта – с тестами и без полного прогона тестов. "
-         "«Чисто» – 5/5 по чекеру и ни одной лишней правки в диффе. «Наступил» – агент сделал лишнюю правку по ходу, «осталось» – она дожила до итогового диффа. "
-         "Откаты – git checkout своих изменений, почти всегда после правки чужой сборки detekt-sample-extensions. Veai модуль не видит: его нет в модели проекта IDE. "
+textbox(s, 0.49, 1.22, 9.0, 0.28, "Opus 5.5 · одна задача · чекер на итоговом диффе", size=11.5, color=GREY)
+RUNS = [("Текст", "Claude Code · 16 прогонов", GREY, [("16 из 16", "решена"), ("5", "чисто"), ("9", "откатов")]),
+        ("LSP", "Claude Code + Serena · 15 прогонов", LILAC, [("10 из 15", "решена"), ("7", "чисто"), ("10", "откатов")]),
+        ("Инструменты IDE", "Veai · 9 прогонов", GREEN, [("9 из 9", "решена"), ("9", "чисто"), ("0", "откатов")])]
+for i, (name, sub, col, nums) in enumerate(RUNS):
+    x = X3[i]
+    card(s, x, 1.6, 2.85, 3.5, line=col, size=12, margin=0.2, text=[
+        (name, {"size": 16, "bold": True, "space_after": 2}),
+        (sub, {"size": 10.5, "color": GREY, "space_after": 10}),
+    ] + sum([[(v, {"size": 24, "bold": True, "color": col}), (k, {"size": 11, "color": GREY, "space_after": 8})] for v, k in nums], []))
+textbox(s, 0.49, 5.12, 9.0, 0.3, "чисто – задача решена и в диффе ничего лишнего · откаты – git checkout своих правок", size=10.5, color=GREY)
+anim(s, [0, 1], [2], [3], [4])
+notes(s, "Выборка Максима Паршина: Claude Code 16 прогонов, Claude Code + Serena 15, Veai 9 (5 на Opus 5.5, 4 на GPT-6.1-Sol); два варианта промпта – с тестами и без полного прогона. "
+         "«Решена» – 5 из 5 обязательных пунктов чекера. «Чисто» – решена и ни одной лишней правки в итоговом диффе (чужая сборка, документация). "
+         "Откаты – агент откатывал собственные правки git checkout, почти всегда после правки чужой сборки detekt-sample-extensions. Veai модуль не видит: его нет в модели проекта IDE. "
          "LSP: 5 прогонов из 15 не довели задачу до 5/5. Время между подходами не сравниваем: промпты и кэш Gradle разные.")
 
 # ---- Таблица ----
-s = slide_blank("Сравнение", "Результат и цена")
+s = slide_blank("Сравнение", "Сравнение подходов")
 compare_table(s)
 notes(s, "Не читать вслух. У текста нет символа; у LSP символ есть, но только rename, один язык и конфликты как повезёт; у движка – модель проекта и проверка до правки. "
          "Ниша текста – некомпилирующийся код и нулевая цена входа. Строка контекста – ответ на «сколько стоят описания инструментов».")
+
+# ---- Переход к Bias ----
+s = slide_blank(CH_APPR, "")
+textbox(s, 0.72, 2.2, 8.56, 1.2, "Инструменты IDE есть. Почему агенты ими не пользуются?", size=26, bold=True, color=WHITE, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+notes(s, "Переход: движок показал лучший результат, а терминальные агенты по умолчанию идут в grep и sed. Дальше – почему: инструкции агентов и привычки моделей.")
 
 # ---- Bias агентов (a): Codex и Claude Code ----
 s = slide_blank(CH_APPR, "Bias агентов")
@@ -1209,7 +1201,6 @@ textbox(s, 6.8, 1.45, 2.7, 1.39, [
 textbox(s, 6.8, 2.95, 2.7, 1.0, [
     ("«Модели стали хорошо искать grep'ом»", {"size": 14, "bold": True, "color": LILAC}),
 ], size=14, anchor=MSO_ANCHOR.MIDDLE)
-textbox(s, 0.49, 4.15, 9.0, 0.3, "Не промпт, а продуктовое решение Cursor", size=12, color=GREY)
 notes(s, "Не промпт, а продуктовое решение: Cursor убрал семантический индекс, потому что модели справляются grep'ом. forum.cursor.com/t/…/165899")
 
 # ---- Bias агентов (c): Serena ----
@@ -1225,8 +1216,9 @@ notes(s, "Переход к LSP: Serena даёт агенту LSP, и её ав�
 # ---- Бенчмарк по моделям ----
 s = slide_blank(CH_APPR, "Bias моделей")
 card(s, 0.49, 1.4, 4.4, 3.7, line=WHITE, size=12, gap=8, text=[
-    ("Эксперимент Veai, октябрь 2026", {"size": 13, "bold": True, "color": LILAC, "space_after": 4}),
-    ("Одни инструменты IDE, три модели, 9 задач рефакторинга Java/Kotlin, по 15 прогонов на модель", {"color": GREY, "space_after": 8}),
+    ("Наш эксперимент, октябрь 2026", {"size": 13, "bold": True, "color": LILAC, "space_after": 4}),
+    ("9 задач рефакторинга на Java/Kotlin", {"color": GREY}),
+    ("15 прогонов на модель", {"color": GREY, "space_after": 8}),
 ])
 BENCH_COLS = ["Sol 6.1", "Opus 5.5", "GLM 5.3"]
 BENCH_ROWS = [("Рефакторинг движком применён", ["10", "7", "6"]),
@@ -1249,7 +1241,7 @@ card(s, 5.1, 1.4, 4.4, 3.7, line=WHITE, size=12, gap=8, text=[
     ("•", "Если LSP навязать принудительно – успешных задач 89 % вместо 100 %"),
     ("agentconnect.md/blog/grep-beat-lsp-harness", {"size": 10.5, "color": GREY}),
 ])
-anim(s, range(0, 17), [17])
+anim(s, range(0, 17), [17])  # noqa
 notes(s, "Бенчмарк Максима Паршина (colleague-package 2026-10-16): 54 прогона, сопоставимая выборка 15 на модель; reasoning medium; skills и делегирование выключены. "
          "Общего избегания инструментов нет: move на Kafka и rename на Gson/Jackson применяют все. Разница – в стиле: Sol строит IDE-first (usages, структура, run configurations), "
          "Opus и GLM исследуют и проверяют через shell. Оговорки: выборка небольшая и неоднородная, описания инструментов сами подталкивают к IDE. "
@@ -1275,22 +1267,17 @@ notes(s, "Итог по выбору подхода – просьба оргк�
 
 # ---- Veai CLI ----
 s = slide_blank("Итоги", "Veai CLI")
-card(s, 0.49, 1.4, 4.4, 3.7, line=GREY, size=12.5, gap=8, text=[
-    ("Текстовый подход неотъемлем", {"size": 15, "bold": True, "space_after": 8}),
-    ("Много задач, где семантика не нужна:", {"color": GREY, "space_after": 4}),
-    ("•", "конфиги, скрипты, документация"),
-    ("•", "CI и чужая машина – IDE нет"),
-    ("•", "одно имя – одна функция, мест немного"),
-])
-card(s, 5.1, 1.4, 4.4, 3.7, line=PURPLE, size=12.5, gap=8, text=[
-    ("Поэтому у нас есть Veai CLI", {"size": 15, "bold": True, "space_after": 8}),
-    ("•", "Все топовые модели в одной подписке: Anthropic, OpenAI, Gemini, GLM, Kimi, Qwen, DeepSeek"),
+picture(s, "img/veai-cli.gif", 0.49, 1.3, w=6.0)                     # 800×500 → 6.0×3.75; ролик с veai.ru/cli, 29 с
+card(s, 6.7, 1.3, 2.8, 3.75, line=PURPLE, size=11.5, gap=8, margin=0.2, text=[
+    ("Агент в терминале", {"size": 14, "bold": True, "space_after": 8}),
+    ("•", "Все топовые модели в одной подписке"),
     ("•", "Работает без VPN, оплата русской картой"),
-    ("•", "Настраивает себя сам: MCP, правила, скиллы – через чат"),
+    ("•", "Настраивает себя сам: MCP, правила, скиллы"),
+    ("•", "Субагенты и фоновые задачи"),
     ("veai.ru/cli", {"size": 10.5, "color": GREY}),
 ])
-anim(s, [0], [1])
-notes(s, "Инструмент под задачу, а не задача под инструмент. По veai.ru/cli (2026-10-16). Также: Telegram-управление, автоподбор модели, субагенты и фоновые задачи, прогрев кэша.")
+notes(s, "Словами: текстовый подход неотъемлем – много задач, где семантика не нужна (конфиги, скрипты, документация, CI без IDE), поэтому у нас есть CLI. "
+         "По veai.ru/cli (2026-10-16): модели Anthropic, OpenAI, Gemini, GLM, Kimi, Qwen, DeepSeek; Telegram-управление; автоподбор модели; прогрев кэша.")
 
 # ---- Советы ----
 s = slide_blank("Итоги", "Советы пользователям агентов")
