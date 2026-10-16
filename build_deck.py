@@ -380,7 +380,7 @@ def slide_demo(kicker, title, run, steps):
     w = 6.6; h = w * 9 / 16
     s.shapes.add_movie(run["video"], Inches(0.49), Inches(1.3), Inches(w), Inches(h),
                        poster_frame_image=run["poster"], mime_type="video/mp4")
-    card(s, 7.3, 1.3, 2.2, h, line=PURPLE, size=13, gap=4, margin=0.2, anchor=MSO_ANCHOR.MIDDLE, text=[
+    card(s, 7.57, 2.4, 1.94, 1.51, line=PURPLE, size=13, gap=4, margin=0.2, anchor=MSO_ANCHOR.MIDDLE, text=[
         ("АГЕНТ", {"size": 10.5, "color": LILAC, "bold": True}),
         (run["agent"], {"bold": True, "space_after": 14}),
         ("МОДЕЛЬ", {"size": 10.5, "color": LILAC, "bold": True}),
@@ -516,9 +516,9 @@ X4N = [0.72, 3.01, 5.33, 7.61]      # четыре узкие карточки �
 COMPARE_COLS = ["Человек с IDE", "Агент + текстовый подход", "Агент + LSP", "Агент + инструменты IDE"]
 COMPARE_ROWS = [
     ("Полнота", ["✓", "✓", "✓", "✓"]),
-    ("Корректность", ["✓", "✗ чужая сборка, комментарий", "✓", "✓"]),
+    ("Корректность", ["✓", "✗", "✓", "✓"]),
     ("Время", ["≈ 40 мин", "6:20", "4:38", "4:54"]),
-    ("Ошибки / Исправлено", ["–", "6 / 3", "3 / 3", "2 / 2"]),
+    ("Ошибок / Исправлено", ["–", "6 / 3", "3 / 3", "2 / 2"]),
     ("Токены", ["–", "1,8M", "2,4M", "3,3M"]),
     ("Стартовый контекст", ["–", "49k", "59k", "≈ 20k"]),
 ]
@@ -691,13 +691,13 @@ MONO = "Menlo"
 DEMO = {   # финальные прогоны Максима (demo-handoff, 2026-10-15); «Попытки» – ошибок по ходу / исправил сам
     "text":   dict(video="demo-handoff/runs/1-claude-code/session-edited.mp4", poster="img/demo-poster-1.png",
                    agent="Claude Code", model="Opus 5.5", meta="Прогон 6:20, ролик 2:38",
-                   metrics=[("Время", "6:20"), ("Ошибки / Исправлено", "6 / 3"), ("Токены", "1,8M"), ("Контекст", "49k")]),
+                   metrics=[("Время", "6:20"), ("Ошибок / Исправлено", "6 / 3"), ("Токены", "1,8M"), ("Стартовый контекст", "49k")]),
     "lsp":    dict(video="demo-handoff/runs/2-claude-code-serena/session-edited.mp4", poster="img/demo-poster-2.png",
                    agent="Claude Code + Serena (LSP)", model="Opus 5.5", meta="Прогон 4:38, ролик 2:42",
-                   metrics=[("Время", "4:38"), ("Ошибки / Исправлено", "3 / 3"), ("Токены", "2,4M"), ("Контекст", "59k")]),
+                   metrics=[("Время", "4:38"), ("Ошибок / Исправлено", "3 / 3"), ("Токены", "2,4M"), ("Стартовый контекст", "59k")]),
     "engine": dict(video="demo-handoff/runs/3-veai/session-edited.mp4", poster="img/demo-poster-3.png",
                    agent="Veai", model="Opus 5.5", meta="Прогон 4:54, ролик 2:20",
-                   metrics=[("Время", "4:54"), ("Ошибки / Исправлено", "2 / 2"), ("Токены", "3,3M"), ("Контекст", "≈ 20k")]),
+                   metrics=[("Время", "4:54"), ("Ошибок / Исправлено", "2 / 2"), ("Токены", "3,3M"), ("Стартовый контекст", "≈ 20k")]),
 }
 
 # ---- Титул ----
@@ -708,7 +708,7 @@ s = slide_title(["Использование инструментов", "реф�
 s = slide_blank(TALK_SHORT, "О нас")
 people = [("Михаил Костицын", "Спикер", "img/photo-michael.jpg",
            ["Ведущий разработчик Veai",
-            "Начал путь в разработке с анализа программ и формальной верификации",
+            "Начал путь в разработке с анализа программ и формальной верификации: JetBrains Research, Huawei",
             "С 2023 года занимаюсь разработкой систем с искусственным интеллектом"]),
           ("Максим Паршин", "Эксперт", "img/photo-maxim.jpg",
            ["Разработчик Veai",
@@ -719,7 +719,7 @@ for i, (name, role, photo, lines) in enumerate(people):
     card(s, x, 1.45, 4.4, 3.7, line=PURPLE if i == 0 else WHITE)
     picture(s, photo, x + 0.25, 1.7, w=1.5)
     textbox(s, x + 1.95, 1.75, 2.3, 0.53, [(name, {"size": 16, "bold": True}), (role, {"size": 12, "color": LILAC})], size=16)
-    textbox(s, x + 0.25, 3.35, 3.9, 1.24, [(ln, {"color": todo_color(ln, WHITE)}) for ln in lines], size=12, color=WHITE, space_after=6)
+    textbox(s, x + 0.25, 3.35, 3.9, 1.44, [(ln, {"color": todo_color(ln, WHITE)}) for ln in lines], size=12, color=WHITE, space_after=6)
 
 # ---- план ----
 slide_plan(current=CH_INTRO)
@@ -742,10 +742,10 @@ notes(s, "Каждый проход дальше разбираем одинак
 
 # ---- Зачем это QA ----
 s = slide_blank(CH_INTRO, "Зачем это QA")
-card(s, 0.49, 1.4, 9.0, 2.45, line=WHITE, size=16, gap=12, margin=0.35, anchor=MSO_ANCHOR.MIDDLE, text=[
+card(s, 0.49, 1.6, 9.0, 2.25, line=WHITE, size=16, gap=12, margin=0.35, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("•", "Миграция фреймворка: Selenium → Playwright, JUnit 4 → 5"),
-    ("•", "Рефакторинг тестов: переход на Page Object, вынос общих шагов в фикстуры"),
-    ("•", "Смена тестового API: переименовали хелпер, заменили базовый класс тестов"),
+    ("•", "Рефакторинг тестов: переход на Page Object, унификация, фикстуры"),
+    ("•", "Смена тестового API: переименование, смена базового класса тестов"),
     ("•", "…"),
 ])
 card(s, 0.49, 4.1, 9.0, 0.9, line=RED, size=15, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, text=
@@ -789,7 +789,7 @@ ide_tools = [("Find Usages", "img/ide-find-usages.gif", "⌥F7 – все исп
              ("Change Signature", "img/ide-change-signature.gif", "⌘F6 – параметр compile: Boolean = false в старом lint: 76 вызовов обновлены"),
              ("Safe Delete", "img/ide-safe-delete.gif", "⌘⌫ – удалить compileAndLint: 1428 использований, удаление заблокировано")]
 for name, gif, sub in ide_tools:
-    s = slide_blank(CH_INTRO, f"Инструменты рефакторинга IDE: {name}")
+    s = slide_blank(CH_INTRO, f"Инструменты IDE: {name}")
     from PIL import Image as _Img
     _w, _h = _Img.open(gif).size
     gw = min(7.2, 4.11 * _w / _h)                                      # раскладка Михаила: 7.2×4.11, y 1.3
@@ -1013,14 +1013,14 @@ anim(s, [0, 1], [2], [3, 4])
 notes(s, "Агент решает, что переименовать и как поступить с конфликтом; движок ищет ссылки, проверяет конфликт, применяет. Рассматриваем только IntelliJ.")
 
 # ---- Veai ----
-s = slide_blank(CH_APPR, "Veai агент")
-picture(s, "img/veai-agent.gif", 0.49, 1.3, w=5.9)                   # 800×450 → 5.9×3.32; ролик с veai.ru, 24 с
-card(s, 6.6, 1.3, 2.9, 3.32, line=PURPLE, size=11.5, gap=8, margin=0.2, anchor=MSO_ANCHOR.MIDDLE, text=[
-    ("•", "Агент внутри JetBrains IDE"),
-    ("•", "Инструменты IDE: find usages, rename, move, safe delete, отладчик, инспекции"),
-    ("•", "Анализ: SAST, моргающие тесты, тесты из исполнения"),
-])
-anim(s, [0, 1])
+s = slide_blank(CH_APPR, "Veai агент в JetBrains IDE")
+picture(s, "img/veai-agent.gif", 0.4, 1.27, w=5.89)                  # 800×450 → 5.89×3.31; ролик с veai.ru, 24 с – раскладка Михаила
+textbox(s, 7.22, 1.27, 2.44, 3.8, [
+    ("Инструменты IDE:", {"bold": True}), "Find usages", "Rename", "Move", "Safe delete", "Отладчик", "Инспекции IDE", ("…", {"space_after": 8}),
+    ("Инструменты анализа:", {"bold": True}), "поиск уязвимостей (SAST)", "анализ на моргающие тесты", "создание тестов из исполнения", "…",
+], size=9, color=WHITE)
+textbox(s, 0.4, 4.85, 6.49, 0.55, "Veai = ИИ + инструменты IDE + инструменты анализа программ", size=14, color=LILAC, bold=True)
+anim(s, [0, 1], [2])
 notes(s, "По veai.ru и veai.ru/docs (2026-10-14). Команда – более 50 инженеров, экс-JetBrains и Huawei, экспертиза в статическом и динамическом анализе кода, генерации тестов и символьном исполнении. "
          "Дальше демо движка идёт на Veai.")
 
@@ -1142,14 +1142,19 @@ card(s, 0.72, 3.39, 8.56, 1.0, line=RED, fill=RGBColor(0x1A, 0x12, 0x33), size=1
     ("rule.lint(code)             // переименовано", {"color": RED}),
     ("rule.lint(code)             // неразличимы: 78 вызовов меняют смысл", {"color": RED}),
 ])
-card(s, 0.72, 4.52, 8.56, 0.55, line=GREEN, size=12.5, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.1,
-     text="Движок видит это на копии и останавливается: конфликт «lint уже объявлена»")
+card(s, 0.72, 4.64, 8.56, 0.55, line=GREEN, size=12.5, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, margin=0.1,
+     text="Движок видит это на копии и останавливается: конфликт")
 anim(s, [0], [1], [2, 3], [4, 5], [6, 7], [8], [9], [10])
 notes(s, "Механизм для метода: копия выражения-вызова, новое имя, повторный резолв. На кейсе – конфликт объявления.")
 
+# ---- Таблица ----
+s = slide_blank("Сравнение", "Сравнение подходов")
+compare_table(s)
+notes(s, "Не читать вслух. У текста нет символа; у LSP символ есть, но только rename, один язык и конфликты как повезёт; у движка – модель проекта и проверка до правки. "
+         "Ниша текста – некомпилирующийся код и нулевая цена входа. Строка контекста – ответ на «сколько стоят описания инструментов».")
+
 # ---- 40 прогонов ----
-s = slide_blank("Сравнение", "40 прогонов одной задачи")
-textbox(s, 0.49, 1.22, 9.0, 0.28, "Opus 5.5 · одна задача · чекер на итоговом диффе", size=11.5, color=GREY)
+s = slide_blank("Сравнение", "Сравнение подходов")
 RUNS = [("Текст", "Claude Code · 16 прогонов", GREY, [("16 из 16", "решена"), ("5", "чисто"), ("9", "откатов")]),
         ("LSP", "Claude Code + Serena · 15 прогонов", LILAC, [("10 из 15", "решена"), ("7", "чисто"), ("10", "откатов")]),
         ("Инструменты IDE", "Veai · 9 прогонов", GREEN, [("9 из 9", "решена"), ("9", "чисто"), ("0", "откатов")])]
@@ -1159,22 +1164,16 @@ for i, (name, sub, col, nums) in enumerate(RUNS):
         (name, {"size": 16, "bold": True, "space_after": 2}),
         (sub, {"size": 10.5, "color": GREY, "space_after": 10}),
     ] + sum([[(v, {"size": 24, "bold": True, "color": col}), (k, {"size": 11, "color": GREY, "space_after": 8})] for v, k in nums], []))
-textbox(s, 0.49, 5.12, 9.0, 0.3, "чисто – задача решена и в диффе ничего лишнего · откаты – git checkout своих правок", size=10.5, color=GREY)
-anim(s, [0, 1], [2], [3], [4])
+anim(s, [0], [1], [2])
 notes(s, "Выборка Максима Паршина: Claude Code 16 прогонов, Claude Code + Serena 15, Veai 9 (5 на Opus 5.5, 4 на GPT-6.1-Sol); два варианта промпта – с тестами и без полного прогона. "
          "«Решена» – 5 из 5 обязательных пунктов чекера. «Чисто» – решена и ни одной лишней правки в итоговом диффе (чужая сборка, документация). "
          "Откаты – агент откатывал собственные правки git checkout, почти всегда после правки чужой сборки detekt-sample-extensions. Veai модуль не видит: его нет в модели проекта IDE. "
          "LSP: 5 прогонов из 15 не довели задачу до 5/5. Время между подходами не сравниваем: промпты и кэш Gradle разные.")
 
-# ---- Таблица ----
-s = slide_blank("Сравнение", "Сравнение подходов")
-compare_table(s)
-notes(s, "Не читать вслух. У текста нет символа; у LSP символ есть, но только rename, один язык и конфликты как повезёт; у движка – модель проекта и проверка до правки. "
-         "Ниша текста – некомпилирующийся код и нулевая цена входа. Строка контекста – ответ на «сколько стоят описания инструментов».")
-
 # ---- Переход к Bias ----
 s = slide_blank(CH_APPR, "")
-textbox(s, 0.72, 2.11, 8.56, 1.37, ["Дали агенту классные инструменты, а он ими не пользуется…", "Почему?"], size=26, bold=True, color=WHITE, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+picture(s, "img/meme-distracted.jpg", 0.49, 1.15, h=3.2)           # 1200×800 → 4.8×3.2
+textbox(s, 5.5, 1.15, 4.0, 3.2, ["Дали агенту классные инструменты, а он ими не пользуется…", "Почему?"], size=22, bold=True, color=WHITE, anchor=MSO_ANCHOR.MIDDLE)
 notes(s, "Переход: движок показал лучший результат, а терминальные агенты по умолчанию идут в grep и sed. Дальше – почему: инструкции агентов и привычки моделей.")
 
 # ---- Bias агентов (a): Codex и Claude Code ----
@@ -1183,14 +1182,10 @@ source_line(s, 0.49, 1.15, 9.0, "Codex CLI – системный промпт")
 picture(s, "img/codex-prompt.png", 0.49, 1.45, w=5.9)                # 1800×464 → 5.9×1.52
 source_line(s, 0.49, 3.2, 9.0, "Claude Code – системный промпт")
 picture(s, "img/claude-code-bypass-issue.png", 0.49, 3.5, w=5.9)     # 1640×329 → 5.9×1.18
-textbox(s, 6.6, 1.45, 2.9, 1.52, [
-    ("Для поиска используй rg, для редактирования – скрипты", {"size": 14, "bold": True, "color": LILAC, "space_after": 6}),
-    ("Системный промпт Codex", {"size": 11, "color": GREY}),
-], size=14, anchor=MSO_ANCHOR.MIDDLE)
-textbox(s, 6.6, 3.5, 2.9, 1.18, [
-    ("Работай через bash: для чтения – cat, для поиска – grep, для редактирования – sed", {"size": 14, "bold": True, "color": LILAC, "space_after": 6}),
-    ("Системный промпт Claude Code", {"size": 11, "color": GREY}),
-], size=14, anchor=MSO_ANCHOR.MIDDLE)
+textbox(s, 6.6, 1.83, 2.9, 0.77, [("«Для поиска используй rg, для редактирования – скрипты»", {"size": 14, "bold": True, "color": LILAC})],
+        size=14, anchor=MSO_ANCHOR.MIDDLE)
+textbox(s, 6.6, 3.59, 2.9, 1.0, [("«Работай через bash: для чтения – cat, для поиска – grep, для редактирования – sed»", {"size": 14, "bold": True, "color": LILAC})],
+        size=14, anchor=MSO_ANCHOR.MIDDLE)
 notes(s, "Это инструкция агента, а не выбор модели: та же модель в другом агенте инструменты вызывает. Единственный инструмент правки у терминальных агентов – замена строки или патч. "
          "Источники: github.com/openai/codex, codex-rs/core/gpt_5_codex_prompt.md (тот же текст в промптах для gpt-5.2); блок bypass/auto – по issue anthropics/claude-code #88475 (версии 2.1.228+). "
          "Документация Claude Code: на macOS и Linux Glob и Grep убраны из набора по умолчанию – поиск через find и grep в Bash. OpenCode: описание инструмента Edit предлагает replaceAll, «if you want to rename a variable».")
@@ -1201,10 +1196,10 @@ source_line(s, 0.49, 1.15, 9.0, "Форум Cursor, июль 2026 – ответ
 picture(s, "img/cursor-forum-colin.png", 0.49, 1.45, w=6.1)          # 2340×534 → 6.1×1.39
 picture(s, "img/cursor-forum-maximep.png", 0.49, 2.95, w=6.1)        # 2340×382 → 6.1×1.0
 textbox(s, 6.8, 1.45, 2.7, 1.39, [
-    ("Семантический индекс (RAG) отключён в пользу grep", {"size": 14, "bold": True, "color": LILAC}),
+    ("«Семантический индекс (RAG) отключён в пользу grep»", {"size": 14, "bold": True, "color": LILAC}),
 ], size=14, anchor=MSO_ANCHOR.MIDDLE)
 textbox(s, 6.8, 2.95, 2.7, 1.0, [
-    ("Модели научились искать с помощью grep, индекс (RAG) не нужен", {"size": 14, "bold": True, "color": LILAC}),
+    ("«Модели научились искать с помощью grep, индекс (RAG) не нужен»", {"size": 14, "bold": True, "color": LILAC}),
 ], size=14, anchor=MSO_ANCHOR.MIDDLE)
 notes(s, "Не промпт, а продуктовое решение: Cursor убрал семантический индекс, потому что модели справляются grep'ом. forum.cursor.com/t/…/165899")
 
@@ -1212,9 +1207,9 @@ notes(s, "Не промпт, а продуктовое решение: Cursor у
 s = slide_blank(CH_APPR, "Bias агентов")
 textbox(s, 0.49, 1.15, 9.0, 0.25, "Документация Serena – MCP-сервера с инструментами LSP для агентов, октябрь 2026", size=11, color=GREY)
 picture(s, "img/serena-docs-attention.png", 0.49, 1.52, h=3.75)      # 1640×1082 → 5.68×3.75
-textbox(s, 6.4, 2.4, 3.1, 2.0, [
+textbox(s, 6.4, 2.59, 3.1, 1.61, [
     ("«Почти невозможно убедить Opus 4.7 пользоваться Serena»", {"size": 16, "bold": True, "color": LILAC, "space_after": 10}),
-    ("Авторы дают отдельный системный промпт, чтобы это исправить", {"size": 12, "color": GREY}),
+    ("Авторы Serena дают отдельный системный промпт, чтобы это исправить", {"size": 12, "color": GREY}),
 ], size=16, anchor=MSO_ANCHOR.MIDDLE)
 notes(s, "Переход к LSP: Serena даёт агенту LSP, и её авторы пишут, что модель к ней сама не идёт. Демо LSP – на Claude Code + Serena. oraios.github.io/serena/02-usage/030_clients.html")
 
@@ -1240,8 +1235,7 @@ mini_table(0.7, 2.75, ["Sol 6.1", "Opus 5.5", "GLM 5.3"],
 textbox(s, 0.7, 4.3, 4.0, 0.6, "Доля прогонов, где агент пользовался инструментами IDE", size=10.5, color=GREY)
 card(s, 5.1, 1.4, 4.4, 3.7, line=WHITE, size=12, gap=8, text=[
     ("Эксперимент AgentConnect, август 2026", {"size": 13, "bold": True, "color": LILAC, "space_after": 4}),
-    ("Моделям Claude дали инструменты LSP рядом с grep", {"color": GREY}),
-    ("2–3 прогона на задачу", {"color": GREY, "space_after": 8}),
+    ("Моделям Claude дали инструменты LSP рядом с grep", {"color": GREY, "space_after": 8}),
 ])
 mini_table(5.3, 2.75, ["Claude"], [("Поиск в коде", ["0–6 %"]), ("Рефакторинг", ["3 %"])], 2.2, 1.0)
 textbox(s, 5.3, 4.3, 4.0, 0.6, [("Доля задач, где агент выбрал LSP. Если LSP навязать – успешных задач 89 % вместо 100 %", {}),
@@ -1274,7 +1268,7 @@ notes(s, "Итог по выбору подхода – просьба оргк�
 s = slide_blank("Итоги", "Veai CLI")
 picture(s, "img/veai-cli.gif", 0.49, 1.3, w=6.0)                     # 800×500 → 6.0×3.75; ролик с veai.ru/cli, 29 с
 card(s, 6.7, 1.3, 2.8, 3.75, line=PURPLE, size=11.5, gap=8, margin=0.2, text=[
-    ("Агент в терминале", {"size": 14, "bold": True, "space_after": 8}),
+    ("Русский Claude Code", {"size": 14, "bold": True, "space_after": 8}),
     ("•", "Все топовые модели в одной подписке"),
     ("•", "Работает без VPN"),
     ("•", "Оплата русской картой"),
