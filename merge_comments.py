@@ -27,8 +27,9 @@ def slide_order(z):
     return ["ppt/" + targets[r].lstrip("/").replace("ppt/", "", 1) if not targets[r].startswith("ppt/") else targets[r] for r in rids]
 
 
-def main(src, dst, new_slides=()):
-    """new_slides – номера слайдов (с 1), которых в собранном файле нет в рабочем: комментарии сдвигаются мимо них."""
+def main(src, dst, new_slides=(), moved=()):
+    """new_slides – номера слайдов (с 1), которых в собранном файле нет в рабочем: комментарии сдвигаются мимо них.
+    moved – пары (откуда в рабочем, куда в собранном) для переставленных слайдов; остальные индексы не сдвигаются."""
     with zipfile.ZipFile(src) as zs:
         comments = {}
         order = slide_order(zs)
@@ -49,7 +50,8 @@ def main(src, dst, new_slides=()):
         order = slide_order(zd)
         skip = {n - 1 for n in new_slides}
         dst_idx = [i for i in range(len(order)) if i not in skip]       # рабочий слайд k → собранный dst_idx[k]
-        comments = {dst_idx[i]: v for i, v in comments.items() if i < len(dst_idx)}
+        mv = {a - 1: b - 1 for a, b in moved}
+        comments = {mv.get(i, dst_idx[i]): v for i, v in comments.items() if i < len(dst_idx)}
         names = set(zd.namelist())
         for item in zd.infolist():
             data = zd.read(item.filename)
@@ -76,4 +78,7 @@ def main(src, dst, new_slides=()):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], [int(n) for n in sys.argv[3].split(",")] if len(sys.argv) > 3 else ())
+    spec = sys.argv[3].split(",") if len(sys.argv) > 3 and sys.argv[3] else []      # "37" – новый слайд 37; "43>45" – слайд 43 переехал на 45
+    main(sys.argv[1], sys.argv[2],
+         [int(x) for x in spec if ">" not in x],
+         [tuple(int(v) for v in x.split(">")) for x in spec if ">" in x])
