@@ -241,6 +241,18 @@ def arrow(slide, x, y, w=0.32, h=0.14, color=PURPLE):
     return a
 
 
+def axis(slide, x, y, w, left="синтаксис", right="семантика", color=GREY, size=10):
+    """Ось со стрелкой вправо и подписями концов: синтаксис → семантика."""
+    from pptx.oxml.ns import qn as _q
+    ln = slide.shapes.add_connector(1, Inches(x), Inches(y), Inches(x + w), Inches(y))
+    ln.line.color.rgb = color
+    ln.line.width = Pt(1.25)
+    ln.line._get_or_add_ln().append(ln.line._get_or_add_ln().makeelement(_q("a:tailEnd"), {"type": "triangle", "w": "med", "len": "med"}))
+    textbox(slide, x, y + 0.05, w / 2, 0.25, left, size=size, color=color)
+    textbox(slide, x + w / 2, y + 0.05, w / 2, 0.25, right, size=size, color=color, align=PP_ALIGN.RIGHT)
+    return ln
+
+
 def hline(slide, x, y, w, color=PURPLE, width=1.0):
     ln = slide.shapes.add_connector(1, Inches(x), Inches(y), Inches(x + w), Inches(y))
     ln.line.color.rgb = color
@@ -479,6 +491,7 @@ def slide_subplan(current=None, done=()):
         if i < 2 and (APPROACHES[i + 1] == current or APPROACHES[i + 1] in done):
             gap_c = (x + w + geo[i + 1][0]) / 2
             arrow(s, gap_c - 0.2, 2.5, w=0.4, h=0.3, color=GREY)
+    axis(s, geo[0][0], 3.75, geo[2][0] + geo[2][1] - geo[0][0], size=11)
     return s
 
 
@@ -515,7 +528,7 @@ COMPARE_ROWS = [
     ("Полнота", ["✓", "✗ 2 пропущены", "✓", "TODO"]),
     ("Корректность", ["✓", "✗ двойник, комментарий", "TODO", "TODO"]),
     ("Время", ["≈ 40 мин", "13,7 мин", "TODO", "TODO"]),
-    ("Ходы", ["–", "53", "TODO", "TODO"]),
+    ("Попытки", ["–", "TODO", "TODO", "TODO"]),
     ("Токены", ["–", "3,9M", "TODO", "TODO"]),
     ("Стартовый контекст", ["–", "TODO", "TODO", "TODO"]),
 ]
@@ -525,8 +538,8 @@ def compare_table(s, upto=None):
     """Таблица «Результат и цена». upto – последняя показанная колонка (таблица растёт по ходу доклада)."""
     n = COMPARE_COLS.index(upto) + 1 if upto else len(COMPARE_COLS)
     cols = [""] + COMPARE_COLS[:n]
-    x0, y0 = 0.49, 1.35
-    cw = [2.3] + [6.7 / n] * n
+    x0, y0 = 0.49, 1.7
+    cw = [2.1] + [6.9 / n] * n
     rh = 0.43
     x = x0
     for i, c in enumerate(cols):
@@ -534,6 +547,13 @@ def compare_table(s, upto=None):
             textbox(s, x, y0, cw[i], 0.4, c, size=11 if n > 2 else 12, color=LILAC, bold=True, align=PP_ALIGN.CENTER)
         x += cw[i]
     hline(s, x0, y0 + 0.42, sum(cw), color=PURPLE, width=1.2)
+    # человек – baseline, отделён линией; над агентами ось синтаксис → семантика
+    xb = x0 + cw[0] + cw[1]
+    textbox(s, x0 + cw[0], y0 - 0.3, cw[1], 0.25, "baseline", size=10, color=GREY, align=PP_ALIGN.CENTER)
+    vl = s.shapes.add_connector(1, Inches(xb), Inches(y0 - 0.3), Inches(xb), Inches(y0 + 0.5 + len(COMPARE_ROWS) * rh))
+    vl.line.color.rgb = GREY; vl.line.width = Pt(0.75)
+    if n >= 2:
+        axis(s, xb + 0.15, y0 - 0.3, sum(cw[2:]) - 0.3)
     colmap = {"✓": GREEN, "✗": RED}
     for r, (name, vals) in enumerate(COMPARE_ROWS):
         y = y0 + 0.5 + r * rh
@@ -696,13 +716,17 @@ s = slide_blank(TALK_SHORT, "О нас")
 people = [("Михаил Костицын", "Спикер", "img/photo-michael.jpg",
            ["Ведущий разработчик Veai – ИИ-агента для разработчиков",
             "Статический анализ и формальная верификация; ИИ-агенты с 2023 года"]),
-          ("Максим Паршин", "Эксперт", "img/photo-maxim.jpg", ["TODO", "TODO"])]
+          ("Максим Паршин", "Эксперт", "img/photo-maxim.jpg",
+           ["Разрабатываю ИИ-агента для JetBrains IDE в Veai",
+            "До этого – символьное исполнение и автоматическая генерация тестов в Huawei",
+            "Сейчас разбираюсь, как подружить формальные методы анализа программ с возможностями современных ИИ-моделей "
+            "и сделать из этого действительно полезные инструменты для разработчиков"])]
 for i, (name, role, photo, lines) in enumerate(people):
     x = 0.49 + i * 4.6
-    card(s, x, 1.45, 4.4, 3.55, line=PURPLE if i == 0 else WHITE)
+    card(s, x, 1.45, 4.4, 3.7, line=PURPLE if i == 0 else WHITE)
     picture(s, photo, x + 0.25, 1.7, w=1.5)
     textbox(s, x + 1.95, 1.75, 2.3, 0.53, [(name, {"size": 16, "bold": True}), (role, {"size": 12, "color": LILAC})], size=16)
-    textbox(s, x + 0.25, 3.4, 3.9, 1.5, [(ln, {"color": todo_color(ln, WHITE)}) for ln in lines], size=12.5, color=WHITE, space_after=6)
+    textbox(s, x + 0.25, 3.35, 3.9, 1.75, [(ln, {"color": todo_color(ln, WHITE)}) for ln in lines], size=10.5, color=WHITE, space_after=5)
 
 # ---- план ----
 slide_plan(current=CH_INTRO)
@@ -814,6 +838,7 @@ textbox(s, 3.42, 3.92, 3.16, 0.3, "результат вызова", size=10.5, 
 textbox(s, 2.55, 4.84, 4.88, 0.25,
         "ИИ-агент = модель + контекст + инструменты",
         size=11.5, color=GREY, align=PP_ALIGN.CENTER)
+anim(s, [0], [2, 1], [3, 4], [5, 6], [7])
 
 # ---- план ----
 slide_plan(done={CH_INTRO}, current=CH_APPR)
@@ -920,7 +945,7 @@ card(s, 0.72, 3.65, 8.56, 1.45, line=GREEN, size=12, gap=4, text=[
     ("•", "Переход к определению, поиск использований, переименование по символу"),
     ("•", "Серверы есть для всех основных языков: rust-analyzer, gopls, pyright; Kotlin LSP – пока экспериментальный"),
 ])
-anim(s, range(0, 8), [8])
+anim(s, [0, 1], [2, 3], [4, 5], [6, 7], [8])
 
 # ---- Демо 2: LSP ----
 s = slide_demo(CH_APPR, "Подход 2: LSP",
@@ -1078,6 +1103,7 @@ def frame(x, y, w, h, title):
 g_k = _i()
 frame(0.49, 1.42, 5.8, 3.45, "Kotlin")
 codebox(0.65, 1.87, 5.5, "fun Rule.lint(content: String)", GREEN)          # объявление; низ 2.37
+g_u = _i()
 usages = [(0.65, 1.85, "subject.lint(code)"), (2.65, 1.75, "lint(\"fun f() {}\")"), (4.55, 1.6, "import test.lint")]
 for x, w, t in usages:
     codebox(x, 3.77, w, t, size=10)
@@ -1090,7 +1116,7 @@ g_x = _i()
 frame(6.7, 3.17, 2.8, 1.7, "XML")
 codebox(6.85, 3.77, 2.5, "<bean class=\"MyRule\"/>")
 elbow_arrow(s, [(6.8, 4.02), (6.5, 4.02), (6.5, 2.27), (6.15, 2.27)], r=0.14)
-anim(s, range(g_k, g_j), range(g_j, g_x), list(range(g_x, _i())))
+anim(s, range(g_k, g_u), range(g_u, g_j), range(g_j, g_x), list(range(g_x, _i())))
 notes(s, "Объявление одно, ссылки на него – из разных файлов и разных языков: модули Kotlin, Java, XML дают свои узлы и свои ссылки, движок обходит их одинаково. "
          "Java и XML – иллюстрация возможности (в detekt функцию из Java не вызывают; Java-вызов показан со static import). Ссылка – слой поверх дерева: плагин может добавить связь туда, где компилятор её не видит. "
          "Индексы – почему обход быстрый. На некомпилирующемся коде – частично: неразрешённые ссылки помечаются отдельно.")
@@ -1117,8 +1143,44 @@ card(s, 5.58, 3.39, 3.7, 1.7, line=WHITE, size=11.5, gap=6, text=[
     ("rule.lint(code)  – неразличимы; 78 вызовов меняют смысл", {"font": MONO, "size": 12, "color": RED}),
 ])
 arrow(s, 4.7, 4.14, w=0.6, h=0.16)
-anim(s, [0], range(1, 8), [8, 9, 10])
+anim(s, [0], [1], [2, 3], [4, 5], [6, 7], [8, 9, 10])
 notes(s, "Механизм для метода: копия выражения-вызова, новое имя, повторный резолв. На кейсе – конфликт объявления.")
+
+# ---- 40 прогонов ----
+s = slide_blank("Сравнение", "40 прогонов одной задачи")
+textbox(s, 0.49, 1.22, 9.0, 0.28, "Opus 5.5 · чекер на итоговом диффе · данные Максима Паршина, октябрь 2026", size=11.5, color=GREY)
+RUNS_COLS = ["Текст\nClaude Code · 16", "LSP\nClaude Code + Serena · 15", "Инструменты IDE\nVeai · 9"]
+RUNS_ROWS = [
+    ("Задача решена (5 / 5)", ["16", "10", "9"]),
+    ("Чисто: решена и ничего лишнего", ["5", "7", "9"]),
+    ("Хоть одна лишняя правка в итоге", ["11", "6", "0"]),
+    ("Правил чужую сборку: наступил / осталось", ["14 / 6", "13 / 4", "0 / 0"]),
+    ("Испортил комментарий: наступил / осталось", ["8 / 3", "2 / 2", "0 / 0"]),
+    ("Сервер LSP удалил чужой импорт", ["–", "5 / 2", "–"]),
+    ("Прогонов с откатом своих правок", ["9", "10", "0"]),
+]
+rx0, ry0 = 0.49, 1.6
+rcw = [3.9, 1.7, 1.7, 1.7]
+x = rx0 + rcw[0]
+for i, c in enumerate(RUNS_COLS):
+    textbox(s, x, ry0, rcw[i + 1], 0.5, [(c.split("\n")[0], {"bold": True, "color": LILAC}), (c.split("\n")[1], {"size": 9.5, "color": GREY})],
+            size=11.5, align=PP_ALIGN.CENTER)
+    x += rcw[i + 1]
+hline(s, rx0, ry0 + 0.55, sum(rcw), color=PURPLE, width=1.2)
+for r, (name, vals) in enumerate(RUNS_ROWS):
+    y = ry0 + 0.62 + r * 0.4
+    textbox(s, rx0, y, rcw[0], 0.4, name, size=11, color=WHITE, anchor=MSO_ANCHOR.MIDDLE)
+    x = rx0 + rcw[0]
+    for i, v in enumerate(vals):
+        best = i == 2 and v not in ("–",)
+        textbox(s, x, y, rcw[i + 1], 0.4, v, size=12, color=GREEN if best else WHITE, bold=best, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+        x += rcw[i + 1]
+    if r == 1:
+        hline(s, rx0, y + 0.4, sum(rcw), color=GREY, width=0.5)
+notes(s, "Выборка: Claude Code 16 прогонов, Claude Code + Serena 15, Veai 9 (5 на Opus 5.5, 4 на GPT-6.1-Sol); два варианта промпта – с тестами и без полного прогона тестов. "
+         "«Чисто» – 5/5 по чекеру и ни одной лишней правки в диффе. «Наступил» – агент сделал лишнюю правку по ходу, «осталось» – она дожила до итогового диффа. "
+         "Откаты – git checkout своих изменений, почти всегда после правки чужой сборки detekt-sample-extensions. Veai модуль не видит: его нет в модели проекта IDE. "
+         "LSP: 5 прогонов из 15 не довели задачу до 5/5. Время между подходами не сравниваем: промпты и кэш Gradle разные.")
 
 # ---- Таблица ----
 s = slide_blank("Сравнение", "Результат и цена")

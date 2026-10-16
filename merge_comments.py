@@ -27,7 +27,8 @@ def slide_order(z):
     return ["ppt/" + targets[r].lstrip("/").replace("ppt/", "", 1) if not targets[r].startswith("ppt/") else targets[r] for r in rids]
 
 
-def main(src, dst):
+def main(src, dst, new_slides=()):
+    """new_slides – номера слайдов (с 1), которых в собранном файле нет в рабочем: комментарии сдвигаются мимо них."""
     with zipfile.ZipFile(src) as zs:
         comments = {}
         order = slide_order(zs)
@@ -46,6 +47,9 @@ def main(src, dst):
     tmp = tempfile.mktemp(suffix=".pptx")
     with zipfile.ZipFile(dst) as zd, zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zo:
         order = slide_order(zd)
+        skip = {n - 1 for n in new_slides}
+        dst_idx = [i for i in range(len(order)) if i not in skip]       # рабочий слайд k → собранный dst_idx[k]
+        comments = {dst_idx[i]: v for i, v in comments.items() if i < len(dst_idx)}
         names = set(zd.namelist())
         for item in zd.infolist():
             data = zd.read(item.filename)
@@ -72,4 +76,4 @@ def main(src, dst):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], [int(n) for n in sys.argv[3].split(",")] if len(sys.argv) > 3 else ())
