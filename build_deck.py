@@ -375,13 +375,18 @@ def slide_todo(kicker, title, what, items):
 
 
 def slide_demo(kicker, title, run, steps):
-    """Демо: видео 16:9 по центру, под ним строка «агент · модель»; шаги – в заметки."""
+    """Демо: видео 16:9 слева, справа карточка «Агент / Модель»; шаги – в заметки."""
     s = slide_blank(kicker, title)
-    w = 7.0; h = w * 9 / 16; x = (10 - w) / 2
-    s.shapes.add_movie(run["video"], Inches(x), Inches(1.27), Inches(w), Inches(h),
+    w = 6.6; h = w * 9 / 16
+    s.shapes.add_movie(run["video"], Inches(0.49), Inches(1.3), Inches(w), Inches(h),
                        poster_frame_image=run["poster"], mime_type="video/mp4")
-    textbox(s, x, 1.27 + h + 0.04, w, 0.3, run["meta"], size=11, color=LILAC, align=PP_ALIGN.CENTER)
-    notes(s, "Что происходит в ролике: " + " → ".join(steps) + ".")
+    card(s, 7.3, 1.3, 2.2, h, line=PURPLE, size=13, gap=4, margin=0.2, anchor=MSO_ANCHOR.MIDDLE, text=[
+        ("АГЕНТ", {"size": 10.5, "color": LILAC, "bold": True}),
+        (run["agent"], {"bold": True, "space_after": 14}),
+        ("МОДЕЛЬ", {"size": 10.5, "color": LILAC, "bold": True}),
+        (run["model"], {"bold": True}),
+    ])
+    notes(s, run["meta"] + ". Что происходит в ролике: " + " → ".join(steps) + ".")
     return s
 
 
@@ -513,7 +518,7 @@ COMPARE_ROWS = [
     ("Полнота", ["✓", "✓", "✓", "✓"]),
     ("Корректность", ["✓", "✗ чужая сборка, комментарий", "✓", "✓"]),
     ("Время", ["≈ 40 мин", "6:20", "4:38", "4:54"]),
-    ("Попытки", ["–", "6 / 3", "3 / 3", "2 / 2"]),       # ошибок по ходу / исправил сам
+    ("Ошибки / Исправлено", ["–", "6 / 3", "3 / 3", "2 / 2"]),
     ("Токены", ["–", "1,8M", "2,4M", "3,3M"]),
     ("Стартовый контекст", ["–", "49k", "59k", "≈ 20k"]),
 ]
@@ -685,14 +690,14 @@ CH_APPR = "Подходы к рефакторингу в агентах"
 MONO = "Menlo"
 DEMO = {   # финальные прогоны Максима (demo-handoff, 2026-10-15); «Попытки» – ошибок по ходу / исправил сам
     "text":   dict(video="demo-handoff/runs/1-claude-code/session-edited.mp4", poster="img/demo-poster-1.png",
-                   meta="Агент: Claude Code · Модель: Opus 5.5 · прогон 6:20, ролик 2:38",
-                   metrics=[("Время", "6:20"), ("Попытки", "6 / 3"), ("Токены", "1,8M"), ("Контекст", "49k")]),
+                   agent="Claude Code", model="Opus 5.5", meta="Прогон 6:20, ролик 2:38",
+                   metrics=[("Время", "6:20"), ("Ошибки / Исправлено", "6 / 3"), ("Токены", "1,8M"), ("Контекст", "49k")]),
     "lsp":    dict(video="demo-handoff/runs/2-claude-code-serena/session-edited.mp4", poster="img/demo-poster-2.png",
-                   meta="Агент: Claude Code + Serena (инструменты LSP) · Модель: Opus 5.5 · прогон 4:38, ролик 2:42",
-                   metrics=[("Время", "4:38"), ("Попытки", "3 / 3"), ("Токены", "2,4M"), ("Контекст", "59k")]),
+                   agent="Claude Code + Serena (LSP)", model="Opus 5.5", meta="Прогон 4:38, ролик 2:42",
+                   metrics=[("Время", "4:38"), ("Ошибки / Исправлено", "3 / 3"), ("Токены", "2,4M"), ("Контекст", "59k")]),
     "engine": dict(video="demo-handoff/runs/3-veai/session-edited.mp4", poster="img/demo-poster-3.png",
-                   meta="Агент: Veai · Модель: Opus 5.5 · прогон 4:54, ролик 2:20",
-                   metrics=[("Время", "4:54"), ("Попытки", "2 / 2"), ("Токены", "3,3M"), ("Контекст", "≈ 20k")]),
+                   agent="Veai", model="Opus 5.5", meta="Прогон 4:54, ролик 2:20",
+                   metrics=[("Время", "4:54"), ("Ошибки / Исправлено", "2 / 2"), ("Токены", "3,3M"), ("Контекст", "≈ 20k")]),
 }
 
 # ---- Титул ----
@@ -739,7 +744,7 @@ notes(s, "Каждый проход дальше разбираем одинак
 s = slide_blank(CH_INTRO, "Зачем это QA")
 card(s, 0.49, 1.4, 9.0, 2.45, line=WHITE, size=16, gap=12, margin=0.35, anchor=MSO_ANCHOR.MIDDLE, text=[
     ("•", "Миграция фреймворка: Selenium → Playwright, JUnit 4 → 5"),
-    ("•", "Наведение структуры: PageObject, композиция фикстур"),
+    ("•", "Рефакторинг тестов: переход на Page Object, вынос общих шагов в фикстуры"),
     ("•", "Смена тестового API: переименовали хелпер, заменили базовый класс тестов"),
     ("•", "…"),
 ])
@@ -869,7 +874,7 @@ s = slide_demo(CH_APPR, "Подход 1: текстовый", DEMO["text"],
 s = slide_blank(CH_APPR, "Подход 1: текстовый")
 result_table(s, [
     (True, "все 1506 вызовов"),
-    (False, "задел другую сборку и комментарий"),
+    (False, "сломал соседний модуль и комментарий"),
 ], metrics=DEMO["text"]["metrics"])
 anim(s, [0, 1], [2, 3], range(4, 8))
 notes(s, "Полнота: сильная модель нашла всё, включая два вызова без точки (в 2 из 16 прогонов их пропускали). Корректность: скрипт по подстроке дописал compile = false "
@@ -1009,11 +1014,11 @@ notes(s, "Агент решает, что переименовать и как �
 
 # ---- Veai ----
 s = slide_blank(CH_APPR, "Veai агент")
-picture(s, "img/veai-agent.gif", 0.49, 1.35, w=4.0)                  # 800×450 → 4.0×2.25; ролик с veai.ru, 24 с
-card(s, 4.7, 1.35, 4.8, 3.7, line=PURPLE, size=13, gap=12, margin=0.3, anchor=MSO_ANCHOR.MIDDLE, text=[
-    ("•", "ИИ-агент с глубокой интеграцией в JetBrains IDE"),
-    ("•", "Инструменты IDE: find usages, rename, move, safe delete, отладчик, инспекции IDE, …"),
-    ("•", "Инструменты анализа: поиск уязвимостей (SAST), анализ моргающих тестов, создание тестов из исполнения, …"),
+picture(s, "img/veai-agent.gif", 0.49, 1.3, w=5.9)                   # 800×450 → 5.9×3.32; ролик с veai.ru, 24 с
+card(s, 6.6, 1.3, 2.9, 3.32, line=PURPLE, size=11.5, gap=8, margin=0.2, anchor=MSO_ANCHOR.MIDDLE, text=[
+    ("•", "Агент внутри JetBrains IDE"),
+    ("•", "Инструменты IDE: find usages, rename, move, safe delete, отладчик, инспекции"),
+    ("•", "Анализ: SAST, моргающие тесты, тесты из исполнения"),
 ])
 anim(s, [0, 1])
 notes(s, "По veai.ru и veai.ru/docs (2026-10-14). Команда – более 50 инженеров, экс-JetBrains и Huawei, экспертиза в статическом и динамическом анализе кода, генерации тестов и символьном исполнении. "
@@ -1169,7 +1174,7 @@ notes(s, "Не читать вслух. У текста нет символа; �
 
 # ---- Переход к Bias ----
 s = slide_blank(CH_APPR, "")
-textbox(s, 0.72, 2.2, 8.56, 1.2, "Инструменты IDE есть. Почему агенты ими не пользуются?", size=26, bold=True, color=WHITE, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+textbox(s, 0.72, 2.11, 8.56, 1.37, ["Дали агенту классные инструменты, а он ими не пользуется…", "Почему?"], size=26, bold=True, color=WHITE, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
 notes(s, "Переход: движок показал лучший результат, а терминальные агенты по умолчанию идут в grep и sed. Дальше – почему: инструкции агентов и привычки моделей.")
 
 # ---- Bias агентов (a): Codex и Claude Code ----
@@ -1179,11 +1184,11 @@ picture(s, "img/codex-prompt.png", 0.49, 1.45, w=5.9)                # 1800×464
 source_line(s, 0.49, 3.2, 9.0, "Claude Code – системный промпт")
 picture(s, "img/claude-code-bypass-issue.png", 0.49, 3.5, w=5.9)     # 1640×329 → 5.9×1.18
 textbox(s, 6.6, 1.45, 2.9, 1.52, [
-    ("«Ищи rg, массовые замены делай скриптом»", {"size": 14, "bold": True, "color": LILAC, "space_after": 6}),
+    ("Для поиска используй rg, для редактирования – скрипты", {"size": 14, "bold": True, "color": LILAC, "space_after": 6}),
     ("Системный промпт Codex", {"size": 11, "color": GREY}),
 ], size=14, anchor=MSO_ANCHOR.MIDDLE)
 textbox(s, 6.6, 3.5, 2.9, 1.18, [
-    ("«Читай cat, ищи grep, правь sed»", {"size": 14, "bold": True, "color": LILAC, "space_after": 6}),
+    ("Работай через bash: для чтения – cat, для поиска – grep, для редактирования – sed", {"size": 14, "bold": True, "color": LILAC, "space_after": 6}),
     ("Системный промпт Claude Code", {"size": 11, "color": GREY}),
 ], size=14, anchor=MSO_ANCHOR.MIDDLE)
 notes(s, "Это инструкция агента, а не выбор модели: та же модель в другом агенте инструменты вызывает. Единственный инструмент правки у терминальных агентов – замена строки или патч. "
@@ -1196,10 +1201,10 @@ source_line(s, 0.49, 1.15, 9.0, "Форум Cursor, июль 2026 – ответ
 picture(s, "img/cursor-forum-colin.png", 0.49, 1.45, w=6.1)          # 2340×534 → 6.1×1.39
 picture(s, "img/cursor-forum-maximep.png", 0.49, 2.95, w=6.1)        # 2340×382 → 6.1×1.0
 textbox(s, 6.8, 1.45, 2.7, 1.39, [
-    ("«Семантический индекс отключаем в пользу grep»", {"size": 14, "bold": True, "color": LILAC}),
+    ("Семантический индекс (RAG) отключён в пользу grep", {"size": 14, "bold": True, "color": LILAC}),
 ], size=14, anchor=MSO_ANCHOR.MIDDLE)
 textbox(s, 6.8, 2.95, 2.7, 1.0, [
-    ("«Модели стали хорошо искать grep'ом»", {"size": 14, "bold": True, "color": LILAC}),
+    ("Модели научились искать с помощью grep, индекс (RAG) не нужен", {"size": 14, "bold": True, "color": LILAC}),
 ], size=14, anchor=MSO_ANCHOR.MIDDLE)
 notes(s, "Не промпт, а продуктовое решение: Cursor убрал семантический индекс, потому что модели справляются grep'ом. forum.cursor.com/t/…/165899")
 
@@ -1215,33 +1220,33 @@ notes(s, "Переход к LSP: Serena даёт агенту LSP, и её ав�
 
 # ---- Бенчмарк по моделям ----
 s = slide_blank(CH_APPR, "Bias моделей")
+def mini_table(x, y, cols, rows, label_w, col_w):
+    """Мини-таблица: строки «Поиск в коде / Рефакторинг», в ячейках – доля прогонов с инструментами IDE."""
+    for i, c in enumerate(cols):
+        textbox(s, x + label_w + i * col_w, y, col_w, 0.3, c, size=10, color=LILAC, bold=True, align=PP_ALIGN.CENTER)
+    hline(s, x, y + 0.32, label_w + col_w * len(cols), color=GREY, width=0.5)
+    for r, (name, vals) in enumerate(rows):
+        yy = y + 0.38 + r * 0.42
+        textbox(s, x, yy, label_w, 0.42, name, size=11, color=WHITE, anchor=MSO_ANCHOR.MIDDLE)
+        for i, v in enumerate(vals):
+            textbox(s, x + label_w + i * col_w, yy, col_w, 0.42, v, size=13, bold=True, color=WHITE, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
 card(s, 0.49, 1.4, 4.4, 3.7, line=WHITE, size=12, gap=8, text=[
     ("Наш эксперимент, октябрь 2026", {"size": 13, "bold": True, "color": LILAC, "space_after": 4}),
     ("9 задач рефакторинга на Java/Kotlin", {"color": GREY}),
     ("15 прогонов на модель", {"color": GREY, "space_after": 8}),
 ])
-BENCH_COLS = ["Sol 6.1", "Opus 5.5", "GLM 5.3"]
-BENCH_ROWS = [("Рефакторинг движком применён", ["10", "7", "6"]),
-              ("find_usages", ["8", "0", "2"]),
-              ("grep / rg в терминале", ["4", "11", "10"])]
-bx = [2.6, 3.35, 4.1]
-for i, c in enumerate(BENCH_COLS):
-    textbox(s, bx[i], 2.75, 0.75, 0.3, c, size=10, color=LILAC, bold=True, align=PP_ALIGN.CENTER)
-for r, (name, vals) in enumerate(BENCH_ROWS):
-    y = 3.1 + r * 0.38
-    textbox(s, 0.7, y, 1.95, 0.38, name, size=10.5, color=WHITE, anchor=MSO_ANCHOR.MIDDLE)
-    for i, v in enumerate(vals):
-        textbox(s, bx[i], y, 0.75, 0.38, v, size=12, bold=True, color=WHITE, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-textbox(s, 0.7, 4.35, 4.0, 0.6, "Sol идёт в инструменты IDE, Opus и GLM – в терминал. Прогонов из 15, где действие было", size=10.5, color=GREY)
+mini_table(0.7, 2.75, ["Sol 6.1", "Opus 5.5", "GLM 5.3"],
+           [("Поиск в коде", ["53 %", "0 %", "13 %"]), ("Рефакторинг", ["67 %", "47 %", "40 %"])], 1.6, 0.8)
+textbox(s, 0.7, 4.3, 4.0, 0.6, "Доля прогонов, где агент пользовался инструментами IDE", size=10.5, color=GREY)
 card(s, 5.1, 1.4, 4.4, 3.7, line=WHITE, size=12, gap=8, text=[
     ("Эксперимент AgentConnect, август 2026", {"size": 13, "bold": True, "color": LILAC, "space_after": 4}),
-    ("Моделям Claude дали инструменты LSP рядом с grep и смотрели, что они выберут", {"color": GREY, "space_after": 8}),
-    ("•", "Поиск в коде: LSP выбран в 0–6 % задач"),
-    ("•", "Переименование: в 3 % задач"),
-    ("•", "Если LSP навязать принудительно – успешных задач 89 % вместо 100 %"),
-    ("agentconnect.md/blog/grep-beat-lsp-harness", {"size": 10.5, "color": GREY}),
+    ("Моделям Claude дали инструменты LSP рядом с grep", {"color": GREY}),
+    ("2–3 прогона на задачу", {"color": GREY, "space_after": 8}),
 ])
-anim(s, range(0, 17), [17])  # noqa
+mini_table(5.3, 2.75, ["Claude"], [("Поиск в коде", ["0–6 %"]), ("Рефакторинг", ["3 %"])], 2.2, 1.0)
+textbox(s, 5.3, 4.3, 4.0, 0.6, [("Доля задач, где агент выбрал LSP. Если LSP навязать – успешных задач 89 % вместо 100 %", {}),
+                                ("agentconnect.md/blog/grep-beat-lsp-harness", {"size": 9.5})], size=10.5, color=GREY)
+anim(s, range(0, 14), range(14, 22))
 notes(s, "Бенчмарк Максима Паршина (colleague-package 2026-10-16): 54 прогона, сопоставимая выборка 15 на модель; reasoning medium; skills и делегирование выключены. "
          "Общего избегания инструментов нет: move на Kafka и rename на Gson/Jackson применяют все. Разница – в стиле: Sol строит IDE-first (usages, структура, run configurations), "
          "Opus и GLM исследуют и проверяют через shell. Оговорки: выборка небольшая и неоднородная, описания инструментов сами подталкивают к IDE. "
@@ -1271,10 +1276,11 @@ picture(s, "img/veai-cli.gif", 0.49, 1.3, w=6.0)                     # 800×500 
 card(s, 6.7, 1.3, 2.8, 3.75, line=PURPLE, size=11.5, gap=8, margin=0.2, text=[
     ("Агент в терминале", {"size": 14, "bold": True, "space_after": 8}),
     ("•", "Все топовые модели в одной подписке"),
-    ("•", "Работает без VPN, оплата русской картой"),
-    ("•", "Настраивает себя сам: MCP, правила, скиллы"),
-    ("•", "Субагенты и фоновые задачи"),
-    ("veai.ru/cli", {"size": 10.5, "color": GREY}),
+    ("•", "Работает без VPN"),
+    ("•", "Оплата русской картой"),
+    ("•", "Стандартный набор: субагенты, правила, скиллы, MCP"),
+    ("•", "Управление из Telegram"),
+    ("veai.ru/cli", {"size": 14, "bold": True, "color": LILAC, "space_before": 6}),
 ])
 notes(s, "Словами: текстовый подход неотъемлем – много задач, где семантика не нужна (конфиги, скрипты, документация, CI без IDE), поэтому у нас есть CLI. "
          "По veai.ru/cli (2026-10-16): модели Anthropic, OpenAI, Gemini, GLM, Kimi, Qwen, DeepSeek; Telegram-управление; автоподбор модели; прогрев кэша.")
@@ -1321,7 +1327,7 @@ textbox(s, 0.49, 1.49, 9.0, 0.46, [
 mcp_cols = [("MCP-СЕРВЕР INTELLIJ", "Встроен в IDE с версии 2025.2, включается в настройках",
              [("Rename", "переименование символа", GREEN), ("Move", "нет", RED), ("Safe Delete", "нет", RED)]),
             ("MCP-СЕРВЕР VEAI", "Встроен в агента с версии Veai 5.17, бесплатно",
-             [("Rename", "переименование символа", GREEN), ("Move", "перенос файла или каталога", GREEN), ("Safe Delete", "удаление с проверкой использований", GREEN)])]
+             [("Rename", "переименование символа", GREEN), ("Move", "перенос класса, функции или пакета с обновлением ссылок", GREEN), ("Safe Delete", "удаление с проверкой использований", GREEN)])]
 for i, (t, ver, tools) in enumerate(mcp_cols):
     paras = [(t, {"size": 10.5, "color": LILAC, "bold": True, "space_after": 6}), (ver, {"color": GREY, "space_after": 10})]
     for name, what, col in tools:
