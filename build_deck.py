@@ -516,7 +516,7 @@ COMPARE_ROWS = [
     ("Время", ["≈ 40 мин", "6:20", "4:38", "4:54"]),
     ("Ошибок / Исправлено", ["–", "6 / 3", "3 / 3", "2 / 2"]),
     ("Токены", ["–", "1,8M", "2,4M", "3,3M"]),
-    ("Стартовый контекст", ["–", "49k", "59k", "≈ 20k"]),
+    ("Стартовый контекст", ["–", "49k", "59k", "20k"]),
 ]
 
 
@@ -693,7 +693,7 @@ DEMO = {   # финальные прогоны Максима (demo-handoff, 202
                    metrics=[("Время", "4:38"), ("Ошибок / Исправлено", "3 / 3"), ("Токены", "2,4M"), ("Стартовый контекст", "59k")]),
     "engine": dict(video="demo-handoff/runs/3-veai/session-60s.mp4", poster="img/demo-poster-3.png",
                    agent="Veai", model="Opus 5.5", meta="Прогон 4:54, ролик 0:55",
-                   metrics=[("Время", "4:54"), ("Ошибок / Исправлено", "2 / 2"), ("Токены", "3,3M"), ("Стартовый контекст", "≈ 20k")]),
+                   metrics=[("Время", "4:54"), ("Ошибок / Исправлено", "2 / 2"), ("Токены", "3,3M"), ("Стартовый контекст", "20k")]),
 }
 
 # ---- Титул ----
@@ -951,7 +951,7 @@ s = slide_demo(CH_APPR, "Подход 2: LSP", DEMO["lsp"],
 # ---- LSP: разбор ----
 s = slide_blank(CH_APPR, "Подход 2: LSP")
 result_table(s, [
-    (True, "все 1506 вызовов, по ссылкам"),
+    (True, "все 1506 вызовов"),
     (True, "поведение не изменилось"),
 ], metrics=DEMO["lsp"]["metrics"])
 anim(s, [0, 1], [2, 3], range(4, 8))
@@ -1323,15 +1323,12 @@ for _sl in prs.slides:
         _content = list(_sl.shapes)[3:]
         animate(_sl, [[_content[i] for i in g] for g in _spec])
 
-# ---- Запасные варианты перехода к Bias (мемы «Drake» и «distracted boyfriend») ----
-s = slide_blank("Запасной слайд", "")
-picture(s, "img/meme-drake.jpg", 0.49, 1.15, h=4.0)                # 1200×1200 → 4.0×4.0
-textbox(s, 4.9, 1.15, 4.6, 4.0, ["Дали агенту классные инструменты, а он ими не пользуется…", "Почему?"], size=22, bold=True, color=WHITE, anchor=MSO_ANCHOR.MIDDLE)
-notes(s, "Запасной вариант слайда 39 («Drake»).")
-s = slide_blank("Запасной слайд", "")
-picture(s, "img/meme-distracted.jpg", 0.49, 1.15, h=3.2)           # 1200×800 → 4.8×3.2
-textbox(s, 5.5, 1.15, 4.0, 3.2, ["Дали агенту классные инструменты, а он ими не пользуется…", "Почему?"], size=22, bold=True, color=WHITE, anchor=MSO_ANCHOR.MIDDLE)
-notes(s, "Запасной вариант слайда 39 («distracted boyfriend»).")
+# ---------- заметки докладчика: ориентир по времени + пункты (speaker_notes.py) ----------
+from speaker_notes import SPEAKER, NO_REF, notes_text
+assert len(SPEAKER) == len(prs.slides._sldIdLst), (len(SPEAKER), len(prs.slides._sldIdLst))
+for _i, _sl in enumerate(prs.slides):
+    _old = _sl.notes_slide.notes_text_frame.text if _sl.has_notes_slide else ""
+    _sl.notes_slide.notes_text_frame.text = notes_text(_i) + (("\n\nСправка: " + _old) if _old and _i not in NO_REF else "")
 
 # ---------- язык текста: без lang="ru" PowerPoint проверяет орфографию как английскую ----------
 from pptx.oxml.ns import qn as _qn
