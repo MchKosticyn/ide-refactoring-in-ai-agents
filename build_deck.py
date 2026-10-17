@@ -685,14 +685,14 @@ CH_INTRO = "Введение"
 CH_APPR = "Подходы к рефакторингу в агентах"
 MONO = "Menlo"
 DEMO = {   # финальные прогоны Максима (demo-handoff, 2026-10-15); «Попытки» – ошибок по ходу / исправил сам
-    "text":   dict(video="demo-handoff/runs/1-claude-code/session-edited.mp4", poster="img/demo-poster-1.png",
-                   agent="Claude Code", model="Opus 5.5", meta="Прогон 6:20, ролик 2:38",
+    "text":   dict(video="demo-handoff/runs/1-claude-code/session-60s.mp4", poster="img/demo-poster-1.png",
+                   agent="Claude Code", model="Opus 5.5", meta="Прогон 6:20, ролик 0:36",
                    metrics=[("Время", "6:20"), ("Ошибок / Исправлено", "6 / 3"), ("Токены", "1,8M"), ("Стартовый контекст", "49k")]),
-    "lsp":    dict(video="demo-handoff/runs/2-claude-code-serena/session-edited.mp4", poster="img/demo-poster-2.png",
-                   agent="Claude Code + Serena (LSP)", model="Opus 5.5", meta="Прогон 4:38, ролик 2:42",
+    "lsp":    dict(video="demo-handoff/runs/2-claude-code-serena/session-60s.mp4", poster="img/demo-poster-2.png",
+                   agent="Claude Code + Serena (LSP)", model="Opus 5.5", meta="Прогон 4:38, ролик 0:47",
                    metrics=[("Время", "4:38"), ("Ошибок / Исправлено", "3 / 3"), ("Токены", "2,4M"), ("Стартовый контекст", "59k")]),
-    "engine": dict(video="demo-handoff/runs/3-veai/session-edited.mp4", poster="img/demo-poster-3.png",
-                   agent="Veai", model="Opus 5.5", meta="Прогон 4:54, ролик 2:20",
+    "engine": dict(video="demo-handoff/runs/3-veai/session-60s.mp4", poster="img/demo-poster-3.png",
+                   agent="Veai", model="Opus 5.5", meta="Прогон 4:54, ролик 0:55",
                    metrics=[("Время", "4:54"), ("Ошибок / Исправлено", "2 / 2"), ("Токены", "3,3M"), ("Стартовый контекст", "≈ 20k")]),
 }
 
