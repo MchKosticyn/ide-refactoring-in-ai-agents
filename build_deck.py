@@ -1168,8 +1168,8 @@ notes(s, "Выборка Максима Паршина: Claude Code 16 прог�
 
 # ---- Переход к Bias ----
 s = slide_blank(CH_APPR, "")
-picture(s, "img/meme-drake.jpg", 0.49, 1.15, h=4.0)                # 1200×1200 → 4.0×4.0
-textbox(s, 4.9, 1.15, 4.6, 4.0, ["Дали агенту классные инструменты, а он ими не пользуется…", "Почему?"], size=22, bold=True, color=WHITE, anchor=MSO_ANCHOR.MIDDLE)
+picture(s, "img/meme-cat-bed.jpg", 0.49, 1.15, w=5.5)              # 1380×976 → 5.5×3.89; мем «cat bed is a waste of money»
+textbox(s, 6.1, 1.15, 3.4, 3.9, ["Дали агенту классные инструменты, а он ими не пользуется…", "Почему?"], size=22, bold=True, color=WHITE, anchor=MSO_ANCHOR.MIDDLE)
 notes(s, "Переход: движок показал лучший результат, а терминальные агенты по умолчанию идут в grep и sed. Дальше – почему: инструкции агентов и привычки моделей.")
 
 # ---- Bias агентов (a): Codex и Claude Code ----
@@ -1334,11 +1334,15 @@ for _sl in prs.slides:
         _content = list(_sl.shapes)[3:]
         animate(_sl, [[_content[i] for i in g] for g in _spec])
 
-# ---- Запасной вариант перехода к Bias (мем «distracted boyfriend») ----
+# ---- Запасные варианты перехода к Bias (мемы «Drake» и «distracted boyfriend») ----
+s = slide_blank("Запасной слайд", "")
+picture(s, "img/meme-drake.jpg", 0.49, 1.15, h=4.0)                # 1200×1200 → 4.0×4.0
+textbox(s, 4.9, 1.15, 4.6, 4.0, ["Дали агенту классные инструменты, а он ими не пользуется…", "Почему?"], size=22, bold=True, color=WHITE, anchor=MSO_ANCHOR.MIDDLE)
+notes(s, "Запасной вариант слайда 39 («Drake»).")
 s = slide_blank("Запасной слайд", "")
 picture(s, "img/meme-distracted.jpg", 0.49, 1.15, h=3.2)           # 1200×800 → 4.8×3.2
 textbox(s, 5.5, 1.15, 4.0, 3.2, ["Дали агенту классные инструменты, а он ими не пользуется…", "Почему?"], size=22, bold=True, color=WHITE, anchor=MSO_ANCHOR.MIDDLE)
-notes(s, "Запасной вариант слайда 39: если «Drake» не зайдёт, поставить этот.")
+notes(s, "Запасной вариант слайда 39 («distracted boyfriend»).")
 
 # ---------- язык текста: без lang="ru" PowerPoint проверяет орфографию как английскую ----------
 from pptx.oxml.ns import qn as _qn
