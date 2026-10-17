@@ -709,13 +709,14 @@ people = [("Михаил Костицын", "Спикер", "img/photo-michael.j
           ("Максим Паршин", "Эксперт", "img/photo-maxim.jpg",
            ["Ведущий разработчик Veai",
             "Ранее разрабатывал движок символьного исполнения и генерацию тестов в Huawei",
-            "Разрабатываю формальные методы анализа программ вместе с ИИ-моделями"])]
+            "Разрабатываю ИИ-агента для JetBrains IDE в Veai",
+            "Исследую, как подружить формальные методы анализа программ с ИИ-моделями"])]
 for i, (name, role, photo, lines) in enumerate(people):
     x = 0.49 + i * 4.6
-    card(s, x, 1.45, 4.4, 3.7, line=PURPLE if i == 0 else WHITE)
-    picture(s, photo, x + 0.25, 1.7, w=1.5)
-    textbox(s, x + 1.95, 1.75, 2.3, 0.53, [(name, {"size": 16, "bold": True}), (role, {"size": 12, "color": LILAC})], size=16)
-    textbox(s, x + 0.25, 3.35, 3.9, 1.24 if i else 1.44, [(ln, {"color": todo_color(ln, WHITE)}) for ln in lines], size=12, color=WHITE, space_after=6)
+    card(s, x, 1.36, 4.4, 3.79, line=PURPLE if i == 0 else WHITE)
+    picture(s, photo, x + 0.25, 1.61, w=1.5)
+    textbox(s, x + 1.95, 1.66, 2.3, 0.53, [(name, {"size": 16, "bold": True}), (role, {"size": 12, "color": LILAC})], size=16)
+    textbox(s, x + 0.25, 3.26, 3.9, 1.73 if i else 1.44, [(ln, {"color": todo_color(ln, WHITE)}) for ln in lines], size=12, color=WHITE, space_after=6)
 
 # ---- план ----
 slide_plan(current=CH_INTRO)
@@ -1221,21 +1222,21 @@ def mini_table(x, y, cols, rows, label_w, col_w):
         textbox(s, x, yy, label_w, 0.42, name, size=11, color=WHITE, anchor=MSO_ANCHOR.MIDDLE)
         for i, v in enumerate(vals):
             textbox(s, x + label_w + i * col_w, yy, col_w, 0.42, v, size=13, bold=True, color=WHITE, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-card(s, 0.49, 1.4, 4.4, 3.7, line=WHITE, size=12, gap=8, text=[
+card(s, 0.49, 1.57, 4.4, 3.1, line=WHITE, size=12, gap=8, text=[
     ("Наш эксперимент, октябрь 2026", {"size": 13, "bold": True, "color": LILAC, "space_after": 4}),
+    ("Доля задач, где агент пользовался инструментами IDE", {"color": GREY}),
 ])
-mini_table(0.7, 2.75, ["Sol 6.1", "Opus 5.5", "GLM 5.3"],
+mini_table(0.7, 2.92, ["Sol 6.1", "Opus 5.5", "GLM 5.3"],
            [("Поиск в коде", ["53 %", "0 %", "13 %"]), ("Рефакторинг", ["67 %", "47 %", "40 %"])], 1.6, 0.8)
-textbox(s, 0.7, 4.3, 4.0, 0.41, "Доля задач, где агент пользовался инструментами IDE", size=10.5, color=GREY)
-card(s, 5.1, 1.4, 4.4, 3.7, line=WHITE, size=12, gap=8, text=[
+card(s, 5.1, 1.57, 4.4, 3.1, line=WHITE, size=12, gap=8, text=[
     ("Эксперимент AgentConnect, август 2026", {"size": 13, "bold": True, "color": LILAC, "space_after": 4}),
-    ("Свой агент: grep + LSP (pyright), Python и TypeScript", {"color": GREY, "space_after": 8}),
+    ("Доля задач, где агент выбрал LSP", {"color": GREY}),
+    ("Если LSP навязать – успешных задач 89 % вместо 100 %", {"color": GREY}),
 ])
-mini_table(5.3, 2.75, ["Opus 4.8", "Sonnet 4.6", "Haiku 4.5"],
+mini_table(5.3, 2.92, ["Opus 4.8", "Sonnet 4.6", "Haiku 4.5"],
            [("Поиск в коде", ["0 %", "4 %", "6 %"]), ("Рефакторинг", ["3 %", "–", "–"])], 1.35, 0.9)
-textbox(s, 5.3, 4.3, 4.0, 0.6, [("Доля задач, где агент выбрал LSP. Если LSP навязать – успешных задач 89 % вместо 100 %", {}),
-                                ("agentconnect.md/blog/grep-beat-lsp-harness", {"size": 9.5})], size=10.5, color=GREY)
-anim(s, range(0, 14), range(14, 28))
+textbox(s, 5.3, 4.27, 4.0, 0.22, "agentconnect.md/blog/grep-beat-lsp-harness", size=9.5, color=GREY)
+anim(s, range(0, 13), range(13, 27))
 notes(s, "Бенчмарк Максима Паршина (colleague-package 2026-10-16): 54 прогона, сопоставимая выборка 15 на модель; reasoning medium; skills и делегирование выключены. "
          "Общего избегания инструментов нет: move на Kafka и rename на Gson/Jackson применяют все. Разница – в стиле: Sol строит IDE-first (usages, структура, run configurations), "
          "Opus и GLM исследуют и проверяют через shell. Оговорки: выборка небольшая и неоднородная, описания инструментов сами подталкивают к IDE. "
@@ -1249,7 +1250,7 @@ s = slide_blank("Итоги", "Что выбрать")
 rows = [
     ("Текст", "Нужна легковесность; нет IDE: CI, удаленная машина; хорошее тестовое покрытие, guardrails", GREY),
     ("LSP", "Большой проект, в котором агент путается; нужна легковесность; нет IDE: CI, удаленная машина; нет межъязыковых связей; ", LILAC),
-    ("Движок IDE", "Большой важный проект, в котором агент путается; нужны гарантии; есть IDE и соответствующий компьютер", GREEN),
+    ("Движок IDE", "Большой проект, в котором агент путается; нужны гарантии; есть IDE и соответствующий компьютер", GREEN),
 ]
 y = 1.4
 for name, text, col in rows:
@@ -1274,18 +1275,6 @@ card(s, 6.87, 1.65, 2.8, 3.04, line=PURPLE, size=11.5, gap=8, margin=0.2, text=[
 notes(s, "Словами: текстовый подход неотъемлем – много задач, где семантика не нужна (конфиги, скрипты, документация, CI без IDE), поэтому у нас есть CLI. "
          "По veai.ru/cli (2026-10-16): модели Anthropic, OpenAI, Gemini, GLM, Kimi, Qwen, DeepSeek; Telegram-управление; автоподбор модели; прогрев кэша.")
 
-# ---- Советы ----
-s = slide_blank("Итоги", "Советы пользователям агентов")
-card(s, 0.49, 1.7, 4.4, 2.2, line=GREEN, size=12.5, gap=10, text=[
-    ("Рефакторинг – отдельным коммитом", {"size": 15, "bold": True}),
-    "Отдельно от изменения поведения. Ревью читаемо, откат возможен",
-])
-card(s, 5.1, 1.7, 4.4, 2.2, line=GREEN, size=12.5, gap=10, text=[
-    ("Автоматическая проверка – обязательна", {"size": 15, "bold": True}),
-    "Тесты, компиляция, линтер. В кейсе сборка была зелёной при изменённом поведении – хелперы тестами не покрыты",
-])
-anim(s, [0], [1])
-
 # ---- Summary ----
 s = slide_blank("Итоги", "Главные мысли")
 three_cards(s, ["Рефакторинг – преобразование с гарантиями", "Автоматическая проверка – обязательна", "Инструменты – это руки и ноги агента"], [
@@ -1302,12 +1291,12 @@ bg_glow(s)
 _chrome(s, TALK_SHORT)
 textbox(s, 0.4, 1.6, 6.9, 2.0, ["Спасибо", "за внимание"], size=48, color=WHITE)
 textbox(s, 0.4, 4.0, 6.0, 1.0, [("Вопросы?", {"size": 20, "color": LILAC, "bold": True})], size=20)
-textbox(s, 5.17, 3.75, 4.42, 1.5, [
-    ("Попробовать агента в IDE: veai.ru", {"bold": True}),
+textbox(s, 3.13, 4.2, 6.47, 1.0, [
+    ("Попробовать агента: veai.ru", {"bold": True}),
     ("Попробовать CLI-агента: veai.ru/cli", {"bold": True}),
     ("Промокод «Heisenbug 2026» – бесплатные токены: app.veai.ru", {"bold": True, "color": LILAC}),
     ("Telegram-канал: @veai_devs", {"bold": True}),
-], size=13, color=WHITE)
+], size=12, color=WHITE)
 
 # ---- Приложение: MCP (после «Спасибо», в план не входит) ----
 s = slide_blank("Готовые решения", "MCP-серверы для рефакторинга")
